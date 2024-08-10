@@ -1,0 +1,16 @@
+package MyClasses;
+
+import java.awt.Point;
+
+public class Utilizers {
+	Point position;
+	
+
+	public Utilizers(Point coordinates) {
+		position = coordinates;
+	}
+	
+	public Point getPosition() {
+		return position;
+	}
+}
