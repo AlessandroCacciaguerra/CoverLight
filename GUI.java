@@ -15,12 +15,12 @@ public class GUI extends JFrame {
 	static final int WIDTH = 1000;		//10 metri
 	static final int HEIGHT = 800;		//8 metri
 	static final int MIN_INT = -90;		//un segnale sotto -90 decibel milliwatt non è percepibile dalla comune apparecchiatura Wi-Fi
-	static final Color COL0 = Color.RED;		//Da -75 a -90 dbm			valore più basso
-	static final Color COL1 = Color.ORANGE;		//Da -60 a -75 dbm
-	static final Color COL2 = Color.YELLOW;		//Da -45 a -60 dbm
-	static final Color COL3 = Color.GREEN;		//Da -30 a -45 dbm
-	static final Color COL4 = Color.CYAN;		//> -30 dbm					valore più alto
-	static final Color[] TONI = {COL0,COL1,COL2,COL3,COL4};//TODO:assicurarsi che il set di colori sia accessibile ai daltonici
+	static final String COL0 = "RED";		//Da -75 a -90 dbm			valore più basso
+	static final String COL1 = "ORANGE";		//Da -60 a -75 dbm
+	static final String COL2 = "YELLOW";		//Da -45 a -60 dbm
+	static final String COL3 = "GREEN";		//Da -30 a -45 dbm
+	static final String COL4 = "CYAN";		//> -30 dbm					valore più alto
+	static final Color[] TONI = {Color.getColor(COL0),Color.getColor(COL1),Color.getColor(COL2),Color.getColor(COL3),Color.getColor(COL4)};//TODO:assicurarsi che il set di colori sia accessibile ai daltonici
 	static final String BASSO = "Basso";
 	static final String MEDIO = "Medio";
 	static final String ALTO = "Alto";
@@ -208,6 +208,14 @@ public class GUI extends JFrame {
 				+ "Su ogni piano, si provvede uno spazio di " + WIDTH/100 + " metri per " + HEIGHT/100 + " in cui riprodurre la pianta dell'edificio; valori illegali saranno considerati 0.\r\n"
 				+ "Porte, finestre interne ed esterne od altre aperture fra stanze sono sempre considerate chiuse ai fini della rilevazione del segnale: si ipotizza il segnale minimo nel caso peggiore.\r\n"
 				+ "La precisione massima nel piazzamento di un muro è di " + DIM_SQUARE + " centimetri, sugli assi x e y; non si accettano muri diagonali.\r\n"
+				+ "\r\n"
+				+ "\r\n"
+				+ "L'intensità del segnale è così rappresentata:\r\n"
+				+ "Da -75 a -90 dbm: " + COL0 + "\r\n"
+				+ "Da -60 a -75 dbm: " + COL1 + "\r\n"
+				+ "Da -45 a -60 dbm: " + COL2 + "\r\n"
+				+ "Da -30 a -45 dbm: " + COL3 + "\r\n"
+				+ "> -30 dbm: " + COL4 + "\r\n"
 				+ "\r\n"
 				+ "\r\n"
 				+ "Per selezionare un campo da abilitare/disabilitare/cancellare è sufficiente indicarne la posizione e premere il relativo pulsante; non serve impostare correttamente il resto dei campi.\r\n"
