@@ -1,12 +1,13 @@
-package MyClasses;
+package a01a.sol2;
 
 import javax.swing.*;
+
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.Line2D;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,12 +16,12 @@ public class GUI extends JFrame {
 	static final int WIDTH = 1000;		//10 metri
 	static final int HEIGHT = 800;		//8 metri
 	static final int MIN_INT = -90;		//un segnale sotto -90 decibel milliwatt non è percepibile dalla comune apparecchiatura Wi-Fi
-	static final Color COL0 = Color.RED;		//Da -75 a -90 dbm			valore più basso
-	static final Color COL1 = Color.ORANGE;		//Da -60 a -75 dbm
-	static final Color COL2 = Color.YELLOW;		//Da -45 a -60 dbm
-	static final Color COL3 = Color.GREEN;		//Da -30 a -45 dbm
-	static final Color COL4 = Color.CYAN;		//> -30 dbm					valore più alto
-	static final Color[] TONI = {COL0, COL1, COL2, COL3, COL4};//TODO:assicurarsi che il set di colori sia accessibile ai daltonici
+	static final String COL0 = "RED";		//Da -75 a -90 dbm			valore più basso
+	static final String COL1 = "ORANGE";		//Da -60 a -75 dbm
+	static final String COL2 = "YELLOW";		//Da -45 a -60 dbm
+	static final String COL3 = "GREEN";		//Da -30 a -45 dbm
+	static final String COL4 = "CYAN";		//> -30 dbm					valore più alto
+	static final Color[] TONI = {Color.getColor(COL0),Color.getColor(COL1),Color.getColor(COL2),Color.getColor(COL3),Color.getColor(COL4)};//TODO:assicurarsi che il set di colori sia accessibile ai daltonici
 	static final String BASSO = "Basso";
 	static final String MEDIO = "Medio";
 	static final String ALTO = "Alto";
@@ -28,213 +29,177 @@ public class GUI extends JFrame {
 	static int piano = 0;
 	static final int PIANO_OFFSET = 3;
 	static double[][][] intensity = new double[HEIGHT/DIM_SQUARE][WIDTH/DIM_SQUARE][PIANO_OFFSET*4];
-	static int i, j;
-	static int risultato = -1;
-	
+	static int i, j, risultato;
+
 	private static final long serialVersionUID = 1L;
 
-	static java.util.List<HashMap<Emitters, Boolean>> apparati = new ArrayList<HashMap<Emitters, Boolean>>();		//mappa di emittenti
-	static java.util.List<HashMap<Walls, Boolean>> planimetria = new ArrayList<HashMap<Walls, Boolean>>();			//mappa di muri
-	static java.util.List<HashMap<Utilizers,Boolean>> consumatori = new ArrayList<HashMap<Utilizers, Boolean>>();	//mappa di utilizzatori
-	
-	class canvasPanel extends JPanel {
-		private static final long serialVersionUID = -76517907681793702L;
-		
-		private void paintRectangle() {
-			Graphics g = this.getComponentGraphics(this.getGraphics());
-			int colore = (int) Math.floor(risultato/15);
-			if(colore>4) { colore=4; }
-			System.out.println(colore);
-			g.setColor(TONI[colore]);
-			g.fillRect(j - DIM_SQUARE/2+1,i - DIM_SQUARE/2+1, DIM_SQUARE-1, DIM_SQUARE-1);
-		}
-		
-		private void result(boolean writeValues) {
-			for(Map.Entry<Emitters,Boolean> entry : apparati.get(piano+PIANO_OFFSET).entrySet()) {
-				if(entry.getValue()) {
-					drawEmitter(entry.getKey());
-				}
-			}
-			for(Map.Entry<Walls, Boolean> entry : planimetria.get(piano+PIANO_OFFSET).entrySet()) {
-				if(entry.getValue()) {
-					drawWall(entry.getKey());
-				}
-			}
-			for(Map.Entry<Utilizers,Boolean> entry : consumatori.get(piano+PIANO_OFFSET).entrySet()) {
-				if(entry.getValue()) {
-					drawUtilizer(entry.getKey().getPosition());
-				}
-			}
-			if(writeValues) {
-				writeComponent();
-			}
-		}
-		
-		private void redraw() {
-			this.getGraphics().clearRect(0, 0, WIDTH, HEIGHT);
-			result(false);
-		}
-		
-		private void drawUtilizer(Point draw) {
-			int x = draw.x - draw.x % DIM_SQUARE;
-			int y = draw.y - draw.y % DIM_SQUARE;
-			final float dim_dash = DIM_SQUARE/5;
-			final BasicStroke black_dash = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] {dim_dash,dim_dash}, 0);
-			final BasicStroke white_dash = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] {dim_dash,dim_dash}, dim_dash);
-			this.getGraphics().setColor(Color.BLACK);
-			((Graphics2D) this.getGraphics()).setStroke(black_dash);
-			this.getGraphics().drawRect(x, y, DIM_SQUARE, DIM_SQUARE);
-			this.getGraphics().setColor(Color.WHITE);
-			((Graphics2D) this.getGraphics()).setStroke(white_dash);
-			this.getGraphics().drawRect(x, y, DIM_SQUARE, DIM_SQUARE);
-		} /*l'utente è un quadrato dai bordi bianchi e neri a zig-zag; ha il solo scopo di evidenziare il colore al proprio interno.*/
+	static HashMap<Emitters, Boolean> apparati = new HashMap<Emitters, Boolean>(); // mappa di emittenti
+	static HashMap<Walls, Boolean> planimetria = new HashMap<Walls, Boolean>(); // mappa di muri
+	static HashMap<Utilizers, Boolean> consumatori = new HashMap<Utilizers, Boolean>(); // mappa di utilizzatori
 
-		private void drawEmitter(Emitters emittente) {
-			this.getGraphics().setColor(Color.BLACK);
-			this.getGraphics().fillArc(emittente.getPosition().x,emittente.getPosition().y,DIM_SQUARE,DIM_SQUARE,emittente.getAngles().x,Math.abs(emittente.getAngles().y-emittente.getAngles().x));
-		}
-
-		private void drawWall(Walls muro) {
-			int muratura;
-			switch(muro.getImpact()) {
-				case BASSO:
-					this.getGraphics().setColor(Color.GRAY);
-					muratura = 5;
-					break;
-				case MEDIO:
-					this.getGraphics().setColor(Color.DARK_GRAY);
-					muratura = 7;
-					break;
-				case ALTO:
-					this.getGraphics().setColor(Color.BLACK);
-					muratura = 9;
-					break;
-				default: return;
+	private void result(Graphics graphics) {
+		for (Map.Entry<Emitters, Boolean> entry : apparati.entrySet()) {
+			if (entry.getValue()) {
+				drawEmitter(graphics, entry.getKey());
 			}
-			((Graphics2D) this.getGraphics()).setStroke(new BasicStroke(muratura));
-			this.getGraphics().drawLine((int) muro.getPosition().getX1(),(int) muro.getPosition().getY1(),(int) muro.getPosition().getX2(),(int) muro.getPosition().getY2());
 		}
-
-		private void writeComponent() {
-			this.getGraphics().setColor(Color.WHITE);
-			for (i = 0; i < HEIGHT/DIM_SQUARE; i++) {
-				for (j = 0; j < WIDTH/DIM_SQUARE; j++) {
-					this.getGraphics().drawString(String.valueOf((int) intensity[i][j][piano+PIANO_OFFSET]+MIN_INT), j*DIM_SQUARE+DIM_SQUARE*3/10, i*DIM_SQUARE+DIM_SQUARE*6/10);
-				}
+		for (Map.Entry<Walls, Boolean> entry : planimetria.entrySet()) {
+			if (entry.getValue()) {
+				drawWall(graphics, entry.getKey());
+			}
+		}
+		for (Map.Entry<Utilizers, Boolean> entry : consumatori.entrySet()) {
+			if (entry.getValue()) {
+				drawUtilizer((Graphics2D) graphics, entry.getKey().getPosition());
 			}
 		}
 	}
-	
-	private void copyFloor(int nuovoPiano, Graphics draw, Graphics result) {
-		apparati.set(nuovoPiano+PIANO_OFFSET, apparati.get(piano+PIANO_OFFSET));
-		planimetria.set(nuovoPiano+PIANO_OFFSET, planimetria.get(piano+PIANO_OFFSET));
-		consumatori.set(nuovoPiano+PIANO_OFFSET, consumatori.get(piano+PIANO_OFFSET));
-		piano = nuovoPiano;
+
+	private void redraw(Graphics graphics) {
+		graphics.clearRect(0, 0, WIDTH, HEIGHT);
+		result(graphics);
 	}
-	
+
 	private boolean validatePosition(Point val) {
-		return val.x>=0 && val.x<=WIDTH && val.y>=0 && val.y<=HEIGHT;
-	}
-	
-	private boolean validateWallPosition(Line2D val) {
-		return (val.getX1()>=0 && val.getX1()<=WIDTH && val.getY1()>=0 && val.getY1()<=HEIGHT && val.getX2()>=0 && val.getX2()<=WIDTH && val.getY2()>=0 && val.getY2()<=HEIGHT) &&	//entro i margini
-				(val.getX1() % DIM_SQUARE + val.getX2() % DIM_SQUARE + val.getY1() % DIM_SQUARE + val.getY2() % DIM_SQUARE == 0) &&		//divisibili per DIM_SQUARE
-				(val.getX1() == val.getX2() ^ val.getY1() == val.getY2());	//non nulli e paralleli ad un asse
-	}
-
-			
-	public GUI() {
-		JCheckBox valueCheck = new JCheckBox("Valori esatti (dbm)", false);//TODO
-		for(int p=0; p<=PIANO_OFFSET*4; p++) {
-			apparati.add(new HashMap<Emitters,Boolean>());
-			planimetria.add(new HashMap<Walls,Boolean>());
-			consumatori.add(new HashMap<Utilizers,Boolean>());
+		if (val.x >= 0 && val.x <= WIDTH && val.y >= 0 && val.y <= HEIGHT) {
+			return true;
 		}
-		JButton lowerFloor = new JButton("Vai al piano " + (piano-1));
-		JLabel currentFloor = new JLabel("Piano " + piano);
-		JButton upperFloor = new JButton("Vai al piano " + (piano+1));
-		JButton duplicateMap = new JButton("Copia la mappa corrente nel piano ");
-		JTextArea duplicateMapTxt = new JTextArea();
+		System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di "
+				+ WIDTH + " e " + HEIGHT);
+		return false;
+	}
 
-	//<Area di disegno
-		
-		//Didascalia
-		final JPanel captionPanel = new JPanel(new BorderLayout());
-		captionPanel.setBorder(new TitledBorder("Didascalia"));
-		final JTextArea captionTxtArea = new JTextArea();
-		captionTxtArea.setLineWrap(true);
-		captionTxtArea.setText("Effetto del materiale dell'ostacolo su un segnale radio\r\n"
-				+ "A seconda del materiale, gli ostacoli possono riflettere le onde radio, assorbirle, privandole di una parte della potenza, o non avere alcun effetto sul segnale radio. Tali materiali sono chiamati radiotrasparenti. Più alto è il coefficiente di assorbimento del segnale e più spesso è l'ostacolo, più forte è l'impatto sulla trasmissione radio.\r\n"
-				+ "Coefficiente di assorbimento del segnale\r\n"
-				+ "Basso\r\n"
-				+ "Perdita di potenza del 50%\r\n"
-				+ "- Mattone rosso secco di 90 mm di spessore\r\n"
-				+ "- Pannello di gesso di 100 mm di spessore\r\n"
-				+ "- Legno secco di 80 mm di spessore\r\n"
-				+ "- Vetro di 15 mm di spessore\r\n"
-				+ "\r\n"
-				+ "Medio\r\n"
-				+ "La potenza si riduce di 10 volte\r\n"
-				+ "- Mattone di 250 mm di spessore\r\n"
-				+ "- Blocchi di calcestruzzo di 200 mm di spessore\r\n"
-				+ "- Calcestruzzo di 100 mm di spessore\r\n"
-				+ "- Muratura di 200 mm di spessore\r\n"
-				+ "\r\n"
-				+ "Alto\r\n"
-				+ "La potenza si riduce di 100 volte\r\n"
-				+ "- Calcestruzzo di 300 mm di spessore\r\n"
-				+ "- Calcestruzzo armato di 200 mm di spessore\r\n"
-				+ "- Travi in alluminio e acciaio\r\n"
-				+ "\r\n"
-				+ "\r\n"
-				+ "Si presume un edificio composto da " + PIANO_OFFSET + " piani sotterranei, il piano terra e " + PIANO_OFFSET*3 + " piani superiori\r\n"
-				+ "Su ogni piano, si provvede uno spazio di " + WIDTH/100 + " metri per " + HEIGHT/100 + " in cui riprodurre la pianta dell'edificio; valori illegali saranno considerati 0.\r\n"
-				+ "Porte, finestre interne ed esterne od altre aperture fra stanze sono sempre considerate chiuse ai fini della rilevazione del segnale: si ipotizza il segnale minimo nel caso peggiore.\r\n"
-				+ "La precisione massima nel piazzamento di un muro è di " + DIM_SQUARE + " centimetri, sugli assi x e y; non si accettano muri diagonali.\r\n"
-				+ "Piani strutturati inframmezzati da piani vuoti od incompleti sono tollerati: si presume che le relative planimetrie siano ininfluenti ai fini della simulazione dell'utente.\r\n"
-				+ "\r\n"
-				+ "\r\n"
-				+ "L'intensità del segnale è così rappresentata (dbm: decibel milliwatt):\r\n"
-				+ "Da -75 a -90 dbm: " + COL0 + "\r\n"
-				+ "Da -60 a -75 dbm: " + COL1 + "\r\n"
-				+ "Da -45 a -60 dbm: " + COL2 + "\r\n"
-				+ "Da -30 a -45 dbm: " + COL3 + "\r\n"
-				+ "> -30 dbm: " + COL4 + "\r\n"
-				+ "\r\n"
-				+ "\r\n"
-				+ "Per selezionare un campo da abilitare/disabilitare/cancellare è sufficiente indicarne la posizione e premere il relativo pulsante; non serve impostare correttamente il resto dei campi.\r\n"
-				+ "\r\n"
-				+ "\r\n"
-				+ "Secondo le normative ETSI EN, la potenza di emittenti wireless in un edificio non può superare i 200 milliWatt e la frequenza deve essere compresa nella banda 5150-5350 MegaHertz\r\n"
-				+ "Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE/2 + " centimetri ed i muri si possono intersecare ma non compenetrare.\r\n"
-				+ "Gli angoli di inizio e di fine sono 0 e 360 per antenne omnidirezionali; per antenne direzionali, l'ampiezza è calcolata in senso antiorario con 0° = 360° = ore 3.\r\n");
-		final JScrollPane scroll = new JScrollPane(captionTxtArea);
-		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		captionPanel.add(scroll);
-		
-		
-		//Canvas
+	private boolean validateWallPosition(Line2D val) {
+		if (val.getX1() >= 0 && val.getX1() <= WIDTH && val.getY1() >= 0 && val.getY1() <= HEIGHT && val.getX2() >= 0
+				&& val.getX2() <= WIDTH && val.getY2() >= 0 && val.getY2() <= HEIGHT) {
+			if (val.getX1() % DIM_SQUARE == 0 && val.getX2() % DIM_SQUARE == 0 && val.getY1() % DIM_SQUARE == 0
+					&& val.getY2() % DIM_SQUARE == 0) {
+				if (val.getX1() == val.getX2() ^ val.getY1() == val.getY2()) { // muri diagonali non nulli
+					return true;
+				}
+				System.out.println(
+						"Errore: la posizione deve essere una coppia di numeri che definiscano una linea non nulla parallela ad un asse");
+				return false;
+			}
+			System.out.println("Errore: la posizione deve essere una coppia di numeri multipli di " + DIM_SQUARE
+					+ " (centimetri), che definiscano una linea non nulla parallela ad un asse");
+			return false;
+		}
+		System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di "
+				+ WIDTH + " e " + HEIGHT + ", multipli di " + DIM_SQUARE
+				+ " (centimetri), che definiscano una linea non nulla parallela ad un asse");
+		return false;
+	}
+
+	private void drawUtilizer(Graphics2D graphics, Point draw) {
+		int x = draw.x - draw.x % DIM_SQUARE;
+		int y = draw.y - draw.y % DIM_SQUARE;
+		final float dim_dash = DIM_SQUARE / 5;
+		final BasicStroke black_dash = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0,
+				new float[] { dim_dash, dim_dash }, 0);
+		final BasicStroke white_dash = new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0,
+				new float[] { dim_dash, dim_dash }, dim_dash);
+		graphics.setColor(Color.BLACK);
+		graphics.setStroke(black_dash);
+		graphics.drawRect(x, y, DIM_SQUARE, DIM_SQUARE);
+		graphics.setColor(Color.WHITE);
+		graphics.setStroke(white_dash);
+		graphics.drawRect(x, y, DIM_SQUARE, DIM_SQUARE);
+	} // l'utente è un quadrato dai bordi bianchi e neri a zig-zag; ha il solo scopo
+		// di evidenziare il colore al proprio interno.
+
+	private void drawEmitter(Graphics graphics, Emitters emittente) {
+		graphics.setColor(Color.BLACK);
+		graphics.fillArc(emittente.getPosition().x, emittente.getPosition().y, DIM_SQUARE, DIM_SQUARE,
+				emittente.getAngles().x, Math.abs(emittente.getAngles().y - emittente.getAngles().x));
+	}
+
+	private void drawWall(Graphics graphics, Walls muro) {
+		final BasicStroke muratura = new BasicStroke(5);
+		((Graphics2D) graphics).setStroke(muratura);
+		switch (muro.getImpact()) {
+		case BASSO:
+			graphics.setColor(Color.GRAY);
+			break;
+		case MEDIO:
+			graphics.setColor(Color.DARK_GRAY);
+			break;
+		case ALTO:
+			graphics.setColor(Color.BLACK);
+			break;
+		default:
+			return;
+		}
+		graphics.drawLine((int) muro.getPosition().getX1(), (int) muro.getPosition().getY1(),
+				(int) muro.getPosition().getX2(), (int) muro.getPosition().getY2());
+	}
+
+	private void paintComponent(Graphics graphics) {
+		graphics.setColor(TONI[risultato]);
+		graphics.fillRect(j - DIM_SQUARE / 2 + 1, i - DIM_SQUARE / 2 + 1, DIM_SQUARE - 1, DIM_SQUARE - 1);
+	}
+
+	public GUI() {
+	// Canvas
 		final JPanel canvasPanel = new JPanel(new BorderLayout());
-		canvasPanel.setBorder(new TitledBorder("Canvas"));
+		final JPanel canvasPanelBorder = new JPanel(new BorderLayout());
+		canvasPanelBorder.add(canvasPanel);
+		canvasPanelBorder.setBorder(new JTextField().getBorder());
+		final JPanel canvasPanelSeparator = new JPanel(new BorderLayout());
+		canvasPanelSeparator.add(canvasPanelBorder);
 		
+		// Didascalia e titolo
+		final JLabel canvasTitleLbl = new JLabel("Canvas");
+		final JButton captionBtn = new JButton("Didascalia");
+		final JPanel canvasTitlePanel = new JPanel();
+		canvasTitlePanel.setLayout(new BorderLayout());
+		canvasTitlePanel.add(canvasTitleLbl, BorderLayout.LINE_START);
+		canvasTitlePanel.add(captionBtn, BorderLayout.LINE_END);
+		canvasTitlePanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 20));
+		//canvasTitlePanel.setBorder(new JTextField().getBorder());
+		
+		// Area di disegno del canvas
 		final JPanel canvasContainerPanel = new JPanel(new BorderLayout());// panel che contiene lo scroll
-		canvasPanel.add(canvasContainerPanel);
-
-		final canvasPanel drawPanel = new canvasPanel();// panel che contiene il disegno
+		final JPanel drawPanel = new JPanel();// panel che contiene il disegno
 		final JScrollPane scrollCanvas = new JScrollPane(canvasContainerPanel);
 		scrollCanvas.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		canvasPanel.add(scrollCanvas);
 		canvasContainerPanel.add(drawPanel);
 		
-    //fine Area Di Disegno>
+		//Pulsanti piano
+		final JPanel canvasFloorPanel = new JPanel(new BorderLayout());
+		//canvasFloorPanel.setBorder(new JTextField().getBorder());
+		
+		//Pusanti e label per i piani
+		final JPanel canvasFloorBtnPanel = new JPanel(new FlowLayout());
+		final JButton previousFloorBtn = new JButton("Piano precedente");
+		final JLabel currentFloorLbl = new JLabel("Piano:0");
+		final JButton NextFloorBtn = new JButton("Piano successivo");		
+		canvasFloorBtnPanel.add(previousFloorBtn);
+		canvasFloorBtnPanel.add(currentFloorLbl);
+		canvasFloorBtnPanel.add(NextFloorBtn);	
+		
+		//checkbox
+		final JPanel canvasCheckboxPanel = new JPanel(new BorderLayout());
+		JCheckBox currentFloorCB = new JCheckBox("frequenze"); 
+		currentFloorCB.setToolTipText("Se spuntato mostra il valore delle frequenza di ogni cella");
+		canvasCheckboxPanel.add(currentFloorCB);
+		
+		canvasFloorPanel.add(canvasFloorBtnPanel, BorderLayout.CENTER);
+		canvasFloorPanel.add(canvasCheckboxPanel, BorderLayout.LINE_END);
 		
 		
-    //<Componenti 
+		//Aggiunta a canvas panel
+		canvasPanel.add(canvasTitlePanel, BorderLayout.PAGE_START);
+		canvasPanel.add(scrollCanvas, BorderLayout.CENTER);
+		canvasPanel.add(canvasFloorPanel, BorderLayout.PAGE_END);
 		
+	// fine Canvas
+
+		// <Componenti
 		final JPanel buttonsPanel = new JPanel();
 		buttonsPanel.setLayout(new BoxLayout(buttonsPanel, BoxLayout.Y_AXIS));
 
-		//Emittente 
+		// Emittente
 		final JPanel panelEmitter = new JPanel();
 		final GroupLayout layoutEmitter = new GroupLayout(panelEmitter);
 		panelEmitter.setLayout(layoutEmitter);
@@ -257,112 +222,67 @@ public class GUI extends JFrame {
 		JTextField angEndEmitTxt = new JTextField("360");
 		JLabel emitEnabled = new JLabel("");
 		JLabel emitDisabled = new JLabel("");
-		
+		JLabel emitError = new JLabel("");
+
 		layoutEmitter.setAutoCreateGaps(true);
 		layoutEmitter.setAutoCreateContainerGaps(true);
-		/*
+
 		layoutEmitter.setHorizontalGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.CENTER)
-				.addComponent(createEmitter)
-				.addGroup(layoutEmitter.createSequentialGroup().addComponent(deleteEmitter)
-						.addComponent(enableDisableEmitter))
-				.addGroup(layoutEmitter.createSequentialGroup().addGroup(layoutEmitter
-						.createParallelGroup(GroupLayout.Alignment.LEADING)
-						.addGroup(layoutEmitter.createSequentialGroup().addComponent(xEmitLbl).addComponent(xEmitTxt))
-						.addGroup(layoutEmitter.createSequentialGroup().addComponent(yEmitLbl).addComponent(yEmitTxt))
-						.addGroup(layoutEmitter.createSequentialGroup().addComponent(emitAngStartLbl)
-								.addComponent(angStartEmitTxt)))
-						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING)
-								.addGroup(layoutEmitter.createSequentialGroup().addComponent(powEmitLbl)
-										.addComponent(powEmitTxt))
-								.addGroup(layoutEmitter.createSequentialGroup().addComponent(freqEmitLbl)
-										.addComponent(freqEmitterTxt))
-								.addGroup(layoutEmitter.createSequentialGroup().addComponent(emitAngEndLbl)
-										.addComponent(angEndEmitTxt))))
 				.addGroup(layoutEmitter.createSequentialGroup()
-						.addGroup(layoutEmitter.createSequentialGroup().addComponent(emitEnabled).addComponent(emitDisabled))));
-
-		layoutEmitter.setVerticalGroup(layoutEmitter.createSequentialGroup().addComponent(createEmitter)
-				.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.CENTER).addComponent(deleteEmitter)
-						.addComponent(enableDisableEmitter))
-				.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layoutEmitter
-						.createSequentialGroup()
-						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(xEmitLbl).addComponent(xEmitTxt))
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(powEmitLbl).addComponent(powEmitTxt)))
-						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(yEmitLbl).addComponent(yEmitTxt))
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(freqEmitLbl).addComponent(freqEmitterTxt)))
-						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(emitAngStartLbl).addComponent(angStartEmitTxt))
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(emitAngEndLbl).addComponent(angEndEmitTxt))))
-				.addGroup(layoutEmitter.createSequentialGroup()
-						.addGroup(layoutEmitter.createSequentialGroup().addComponent(emitEnabled).addComponent(emitDisabled)))));*/
-		layoutEmitter.setHorizontalGroup(layoutEmitter.createSequentialGroup()
-				.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-						.addComponent(createEmitter, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-						.addComponent(deleteEmitter, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-						.addComponent(enableDisableEmitter, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-				.addGroup(layoutEmitter.createSequentialGroup().addGroup(layoutEmitter
-						.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layoutEmitter.createSequentialGroup()
-								.addComponent(xEmitLbl)
-								.addComponent(xEmitTxt))
+						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+								.addComponent(createEmitter, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+										Short.MAX_VALUE)
+								.addComponent(deleteEmitter, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+										Short.MAX_VALUE)
+								.addComponent(enableDisableEmitter, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+										Short.MAX_VALUE))
 						.addGroup(layoutEmitter.createSequentialGroup()
-								.addComponent(yEmitLbl)
-								.addComponent(yEmitTxt))
-						.addGroup(layoutEmitter.createSequentialGroup()
-								.addComponent(emitAngStartLbl)
-								.addComponent(angStartEmitTxt)))
-						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING)
-								.addGroup(layoutEmitter.createSequentialGroup()
-										.addComponent(powEmitLbl)
-										.addComponent(powEmitTxt))
-								.addGroup(layoutEmitter.createSequentialGroup()
-										.addComponent(freqEmitLbl)
-										.addComponent(freqEmitterTxt))
-								.addGroup(layoutEmitter.createSequentialGroup()
-										.addComponent(emitAngEndLbl)
-										.addComponent(angEndEmitTxt)))
-						.addGroup(layoutEmitter.createSequentialGroup())
-							.addComponent(lowerFloor).addComponent(currentFloor).addComponent(upperFloor).addComponent(duplicateMap).addComponent(duplicateMapTxt)));
+								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING)
+										.addGroup(layoutEmitter.createSequentialGroup().addComponent(xEmitLbl)
+												.addComponent(xEmitTxt))
+										.addGroup(layoutEmitter.createSequentialGroup().addComponent(yEmitLbl)
+												.addComponent(yEmitTxt))
+										.addGroup(layoutEmitter.createSequentialGroup().addComponent(emitAngStartLbl)
+												.addComponent(angStartEmitTxt)))
+								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING)
+										.addGroup(layoutEmitter.createSequentialGroup().addComponent(powEmitLbl)
+												.addComponent(powEmitTxt))
+										.addGroup(layoutEmitter.createSequentialGroup().addComponent(freqEmitLbl)
+												.addComponent(freqEmitterTxt))
+										.addGroup(layoutEmitter.createSequentialGroup().addComponent(emitAngEndLbl)
+												.addComponent(angEndEmitTxt)))))
+				.addComponent(emitError));
 
-		layoutEmitter.setVerticalGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.CENTER)
-				.addGroup(layoutEmitter.createSequentialGroup()
-						.addComponent(createEmitter)
-						.addComponent(deleteEmitter)
+		layoutEmitter.setVerticalGroup(layoutEmitter.createSequentialGroup().addGroup(layoutEmitter
+				.createParallelGroup(GroupLayout.Alignment.LEADING)
+				.addGroup(layoutEmitter.createSequentialGroup().addComponent(createEmitter).addComponent(deleteEmitter)
 						.addComponent(enableDisableEmitter))
-				.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING).addGroup(layoutEmitter
-						.createSequentialGroup()
-						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
+				.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.LEADING)
+						.addGroup(layoutEmitter.createSequentialGroup()
 								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(xEmitLbl).addComponent(xEmitTxt))
+										.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
+												.addComponent(xEmitLbl).addComponent(xEmitTxt))
+										.addGroup(layoutEmitter
+												.createParallelGroup(GroupLayout.Alignment.BASELINE)
+												.addComponent(powEmitLbl).addComponent(powEmitTxt)))
 								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(powEmitLbl).addComponent(powEmitTxt)))
-						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
+										.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
+												.addComponent(yEmitLbl).addComponent(yEmitTxt))
+										.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
+												.addComponent(freqEmitLbl).addComponent(freqEmitterTxt)))
 								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(yEmitLbl).addComponent(yEmitTxt))
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(freqEmitLbl).addComponent(freqEmitterTxt)))
-						.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(emitAngStartLbl).addComponent(angStartEmitTxt))
-								.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(emitAngEndLbl).addComponent(angEndEmitTxt)))
-						.addGroup(layoutEmitter.createSequentialGroup())
-							.addComponent(lowerFloor).addComponent(currentFloor).addComponent(upperFloor).addComponent(duplicateMap).addComponent(duplicateMapTxt))));
+										.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
+												.addComponent(emitAngStartLbl).addComponent(angStartEmitTxt))
+										.addGroup(layoutEmitter.createParallelGroup(GroupLayout.Alignment.BASELINE)
+												.addComponent(emitAngEndLbl).addComponent(angEndEmitTxt))))))
+				.addComponent(emitError));
 
-
-		//Utilizzatore
+		// Utilizzatore
 		final JPanel panelUtilizer = new JPanel();
 		final GroupLayout layoutUtilizer = new GroupLayout(panelUtilizer);
 		panelUtilizer.setLayout(layoutUtilizer);
 		panelUtilizer.setBorder(new TitledBorder("Utilizzatore"));
-		
+
 		final JButton createUtilizer = new JButton("Crea");
 		JButton deleteUtilizer = new JButton("Cancella");
 		JButton enableUtilizer = new JButton("Abilita/Disabilita");
@@ -372,75 +292,43 @@ public class GUI extends JFrame {
 		JLabel yUtilLbl = new JLabel("Y:");
 		JLabel yUtilCurVal = new JLabel();
 		JTextField yUtilTxt = new JTextField();
+		JLabel utilEnabled = new JLabel();
+		JLabel utilDisabled = new JLabel();
+		JLabel utilError = new JLabel("");
 
-		
-		JLabel utilEnabled = new JLabel();
-		JLabel utilDisabled = new JLabel();
-		/*final JButton createUtilizer = new JButton("Crea");
-		JButton deleteUtilizer = new JButton("Cancella");
-		JButton enableUtilizer = new JButton("Abilita/Disabilita");
-		JLabel xUtilLbl = new JLabel("X:");
-		JTextField xUtilTxt = new JTextField();
-		JLabel yUtilLbl = new JLabel("Y:");
-		JTextField yUtilTxt = new JTextField();
-		JLabel utilEnabled = new JLabel();
-		JLabel utilDisabled = new JLabel();
-		
 		layoutUtilizer.setAutoCreateGaps(true);
 		layoutUtilizer.setAutoCreateContainerGaps(true);
 
 		layoutUtilizer.setHorizontalGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.CENTER)
-				.addComponent(createUtilizer)
-				.addGroup(layoutUtilizer.createSequentialGroup().addComponent(deleteUtilizer)
-						.addComponent(enableUtilizer))
 				.addGroup(layoutUtilizer.createSequentialGroup()
-						.addGroup(layoutUtilizer.createSequentialGroup().addComponent(xUtilLbl).addComponent(xUtilTxt))
-						.addGroup(layoutUtilizer.createSequentialGroup().addComponent(yUtilLbl).addComponent(yUtilTxt))
-						.addGroup(layoutUtilizer.createSequentialGroup().addComponent(utilEnabled).addComponent(utilDisabled))));
+						.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+								.addComponent(createUtilizer, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+										Short.MAX_VALUE)
+								.addComponent(deleteUtilizer, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+										Short.MAX_VALUE)
+								.addComponent(enableUtilizer, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE,
+										Short.MAX_VALUE))
+						.addGroup(layoutUtilizer.createSequentialGroup()
+								.addGroup(layoutUtilizer.createSequentialGroup().addComponent(xUtilLbl)
+										.addComponent(xUtilCurVal).addComponent(xUtilTxt))
+								.addGroup(layoutUtilizer.createSequentialGroup().addComponent(yUtilLbl)
+										.addComponent(yUtilCurVal).addComponent(yUtilTxt))))
+				.addComponent(utilError));
 
-		layoutUtilizer
-				.setVerticalGroup(layoutUtilizer.createSequentialGroup().addComponent(createUtilizer)
-						.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-								.addComponent(deleteUtilizer).addComponent(enableUtilizer))
-						.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-								.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(xUtilLbl).addComponent(xUtilTxt))
-										.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addGroup(layoutUtilizer
-														.createParallelGroup(GroupLayout.Alignment.BASELINE)
-														.addComponent(yUtilLbl).addComponent(yUtilTxt)))
-										.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addGroup(layoutUtilizer
-														.createParallelGroup(GroupLayout.Alignment.BASELINE)
-														.addComponent(utilEnabled).addComponent(utilDisabled))))));*/
-		layoutUtilizer.setAutoCreateGaps(true);
-		layoutUtilizer.setAutoCreateContainerGaps(true);
-
-		layoutUtilizer.setHorizontalGroup(layoutUtilizer.createSequentialGroup()
-				.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.LEADING, false)
-						.addComponent(createUtilizer, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-						.addComponent(deleteUtilizer, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-						.addComponent(enableUtilizer, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-				.addGroup(layoutUtilizer.createSequentialGroup()
-						.addGroup(layoutUtilizer.createSequentialGroup().addComponent(xUtilLbl)
-								.addComponent(xUtilCurVal).addComponent(xUtilTxt))
-						.addGroup(layoutUtilizer.createSequentialGroup().addComponent(yUtilLbl)
-								.addComponent(yUtilCurVal).addComponent(yUtilTxt))));
-
-		layoutUtilizer.setVerticalGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.CENTER)
+		layoutUtilizer.setVerticalGroup(layoutUtilizer.createSequentialGroup().addGroup(layoutUtilizer
+				.createParallelGroup(GroupLayout.Alignment.CENTER)
 				.addGroup(layoutUtilizer.createSequentialGroup().addComponent(createUtilizer)
 						.addComponent(deleteUtilizer).addComponent(enableUtilizer))
-				.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
+				.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE).addGroup(layoutUtilizer
+						.createParallelGroup(GroupLayout.Alignment.BASELINE)
+						.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
+								.addComponent(xUtilLbl).addComponent(xUtilCurVal).addComponent(xUtilTxt))
 						.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
 								.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addComponent(xUtilLbl).addComponent(xUtilCurVal).addComponent(xUtilTxt))
-								.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addGroup(layoutUtilizer.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(yUtilLbl).addComponent(yUtilCurVal)
-												.addComponent(yUtilTxt))))));
+										.addComponent(yUtilLbl).addComponent(yUtilCurVal).addComponent(yUtilTxt))))))
+				.addComponent(utilError));
 
-		//Muro
+		// Muro
 		final JPanel panelWall = new JPanel();
 		final GroupLayout layoutWall = new GroupLayout(panelWall);
 		panelWall.setLayout(layoutWall);
@@ -471,56 +359,17 @@ public class GUI extends JFrame {
 		JLabel wallDisabledL = new JLabel("");
 		JLabel wallDisabledM = new JLabel("");
 		JLabel wallDisabledH = new JLabel("");
-		
+		JLabel wallError = new JLabel("");
+
 		layoutWall.setAutoCreateGaps(true);
 		layoutWall.setAutoCreateContainerGaps(true);
 
-		/*layoutWall.setHorizontalGroup(
-				layoutWall.createParallelGroup(GroupLayout.Alignment.CENTER).addComponent(createWall)
-						.addGroup(layoutWall.createSequentialGroup().addComponent(deleteWall).addComponent(enableWall))
-						.addGroup(layoutWall.createSequentialGroup()
-								.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.LEADING)
-										.addGroup(layoutWall.createSequentialGroup().addComponent(wallStartxLbl)
-												.addComponent(wallStartxTxt))
-										.addGroup(layoutWall.createSequentialGroup().addComponent(wallStartyLbl)
-												.addComponent(wallStartyTxt)))
-								.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.LEADING)
-										.addGroup(layoutWall.createSequentialGroup().addComponent(wallEndxLbl)
-												.addComponent(wallEndxTxt))
-										.addGroup(layoutWall.createSequentialGroup().addComponent(wallEndyLbl)
-												.addComponent(wallEndyTxt))))
-						.addGroup(layoutWall.createSequentialGroup().addComponent(impactLbl).addComponent(rLow)
-								.addComponent(rMedium).addComponent(rHigh))
-						.addGroup(layoutWall.createSequentialGroup()
-								.addGroup(layoutWall.createSequentialGroup().addComponent(wallEnabledL).addComponent(wallEnabledM).addComponent(wallEnabledH)))
-						.addGroup(layoutWall.createSequentialGroup()
-										.addGroup(layoutWall.createSequentialGroup().addComponent(wallDisabledL).addComponent(wallDisabledM).addComponent(wallDisabledH))));
-
-		layoutWall.setVerticalGroup(layoutWall.createSequentialGroup().addComponent(createWall)
-				.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(deleteWall)
-						.addComponent(enableWall))
-				.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.LEADING)
-						.addGroup(layoutWall.createSequentialGroup()
-								.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(wallStartxLbl).addComponent(wallStartxTxt))
-										.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(wallEndxLbl).addComponent(wallEndxTxt)))
-								.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(wallStartyLbl).addComponent(wallStartyTxt))
-										.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(wallEndyLbl).addComponent(wallEndyTxt)))))
-				.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE).addComponent(impactLbl)
-						.addComponent(rLow).addComponent(rMedium).addComponent(rHigh))
-				.addGroup(layoutWall.createSequentialGroup()
-						.addGroup(layoutWall.createSequentialGroup().addComponent(wallEnabledL).addComponent(wallEnabledM).addComponent(wallEnabledH)))
-				.addGroup(layoutWall.createSequentialGroup()
-								.addGroup(layoutWall.createSequentialGroup().addComponent(wallDisabledL).addComponent(wallDisabledM).addComponent(wallDisabledH))));
-*/
-		layoutWall.setHorizontalGroup(layoutWall.createSequentialGroup()
-				.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.CENTER).addComponent(createWall)
-						.addGroup(layoutWall.createSequentialGroup().addComponent(deleteWall).addComponent(enableWall)))
+		layoutWall.setHorizontalGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.CENTER).addGroup(layoutWall
+				.createSequentialGroup()
+				.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.LEADING, false)
+						.addComponent(createWall, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+						.addComponent(deleteWall, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+						.addComponent(enableWall, GroupLayout.DEFAULT_SIZE, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
 				.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.CENTER)
 						.addGroup(layoutWall.createSequentialGroup()
 								.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.LEADING)
@@ -534,36 +383,36 @@ public class GUI extends JFrame {
 										.addGroup(layoutWall.createSequentialGroup().addComponent(wallEndyLbl)
 												.addComponent(wallEndyTxt))))
 						.addGroup(layoutWall.createSequentialGroup().addComponent(impactLbl).addComponent(rLow)
-								.addComponent(rMedium).addComponent(rHigh))));
+								.addComponent(rMedium).addComponent(rHigh))))
+				.addComponent(wallError));
 
-		layoutWall.setVerticalGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.CENTER)
-				.addGroup(layoutWall.createSequentialGroup().addComponent(createWall)
-						.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.LEADING).addComponent(deleteWall)
-								.addComponent(enableWall)))
-				.addGroup(layoutWall.createSequentialGroup().addGroup(layoutWall
-						.createParallelGroup(GroupLayout.Alignment.LEADING)
-						.addGroup(layoutWall.createSequentialGroup()
-								.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
+		layoutWall.setVerticalGroup(layoutWall.createSequentialGroup().addGroup(layoutWall
+				.createParallelGroup(GroupLayout.Alignment.CENTER)
+				.addGroup(layoutWall.createSequentialGroup().addComponent(createWall).addComponent(deleteWall)
+						.addComponent(enableWall))
+				.addGroup(layoutWall.createSequentialGroup()
+						.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.LEADING)
+								.addGroup(layoutWall.createSequentialGroup()
 										.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(wallStartxLbl).addComponent(wallStartxTxt))
+												.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
+														.addComponent(wallStartxLbl).addComponent(wallStartxTxt))
+												.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
+														.addComponent(wallEndxLbl).addComponent(wallEndxTxt)))
 										.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(wallEndxLbl).addComponent(wallEndxTxt)))
-								.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-										.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(wallStartyLbl).addComponent(wallStartyTxt))
-										.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
-												.addComponent(wallEndyLbl).addComponent(wallEndyTxt)))))
+												.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
+														.addComponent(wallStartyLbl).addComponent(wallStartyTxt))
+												.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.BASELINE)
+														.addComponent(wallEndyLbl).addComponent(wallEndyTxt)))))
 						.addGroup(layoutWall.createParallelGroup(GroupLayout.Alignment.CENTER).addComponent(impactLbl)
-								.addComponent(rLow).addComponent(rMedium).addComponent(rHigh))));
+								.addComponent(rLow).addComponent(rMedium).addComponent(rHigh))))
+				.addComponent(wallError));
 
-		//Aggiunta al panel
-		buttonsPanel.add(panelEmitter);
+		buttonsPanel.add(panelEmitter);// Aggiunta al panel
 		buttonsPanel.add(panelUtilizer);
 		buttonsPanel.add(panelWall);
-		
-		
+
 		// Panel results
-		final canvasPanel resultPanel = new canvasPanel();
+		final JPanel resultPanel = new JPanel();
 		resultPanel.setLayout(new BoxLayout(resultPanel, BoxLayout.Y_AXIS));
 
 		final JButton generateResult = new JButton("Genera risultato");
@@ -577,11 +426,188 @@ public class GUI extends JFrame {
 		resultContainerPanel.add(showResult);
 		resultPanel.add(generateResult);
 		resultPanel.add(scrollResult);
-    //Fine componenti>		
-		
-		//Btn listeners
+
+	//Panel lists
+		final JPanel listsPanel = new JPanel();
+		listsPanel.setLayout(new BoxLayout(listsPanel, BoxLayout.Y_AXIS));
+
+		// Emitters 
+		final JPanel listEmitterPanel = new JPanel(); // Emitters list
+		final GroupLayout listEmitterLayout = new GroupLayout(listEmitterPanel);
+		listEmitterPanel.setLayout(listEmitterLayout);
+
+		JLabel emitterListEnabledLbl = new JLabel("Emettitori abilitati");
+		final JPanel emitterListEnabledPanel = new JPanel(new BorderLayout());
+		final JTextArea emitterListEnabledTxtArea = new JTextArea();
+		emitterListEnabledTxtArea.setLineWrap(true);
+		final JScrollPane emitterListEnabledScroll = new JScrollPane(emitterListEnabledTxtArea);
+		emitterListEnabledScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		emitterListEnabledPanel.add(emitterListEnabledScroll);
+
+		JLabel emitterListDisabledLbl = new JLabel("Emettitori disabilitati");
+		final JPanel emitterListDisabledPanel = new JPanel(new BorderLayout());
+		final JTextArea emitterListDisabledTxtArea = new JTextArea();
+		emitterListDisabledTxtArea.setLineWrap(true);
+		final JScrollPane emitterListDisabledScroll = new JScrollPane(emitterListDisabledTxtArea);
+		emitterListDisabledScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		emitterListDisabledPanel.add(emitterListDisabledScroll);
+
+		listEmitterLayout.setHorizontalGroup(listEmitterLayout.createSequentialGroup()
+				.addGroup(listEmitterLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+						.addComponent(emitterListEnabledLbl).addComponent(emitterListEnabledPanel))
+				.addGroup(listEmitterLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+						.addComponent(emitterListDisabledLbl).addComponent(emitterListDisabledPanel)));
+
+		listEmitterLayout.setVerticalGroup(listEmitterLayout.createParallelGroup(GroupLayout.Alignment.CENTER)
+				.addGroup(listEmitterLayout.createSequentialGroup().addComponent(emitterListEnabledLbl)
+						.addComponent(emitterListEnabledPanel))
+				.addGroup(listEmitterLayout.createSequentialGroup().addComponent(emitterListDisabledLbl)
+						.addComponent(emitterListDisabledPanel)));
+
+		// Utilizers 
+		final JPanel listUtilizerPanel = new JPanel(); // Emitters list
+		final GroupLayout listUtilizerLayout = new GroupLayout(listUtilizerPanel);
+		listUtilizerPanel.setLayout(listUtilizerLayout);
+
+		JLabel utilizerListEnabledLbl = new JLabel("Utilizzatori abilitati");
+		final JPanel utilizerListEnabledPanel = new JPanel(new BorderLayout());
+		final JTextArea utilizerListEnabledTxtArea = new JTextArea();
+		utilizerListEnabledTxtArea.setLineWrap(true);
+		final JScrollPane utilizerListEnabledScroll = new JScrollPane(utilizerListEnabledTxtArea);
+		utilizerListEnabledScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		utilizerListEnabledPanel.add(utilizerListEnabledScroll);
+
+		JLabel utilizerListDisabledLbl = new JLabel("Utilizzatori disabilitati");
+		final JPanel utilizerListDisabledPanel = new JPanel(new BorderLayout());
+		final JTextArea utilizerListDisabledTxtArea = new JTextArea();
+		utilizerListDisabledTxtArea.setLineWrap(true);
+		final JScrollPane utilizerListDisabledScroll = new JScrollPane(utilizerListDisabledTxtArea);
+		utilizerListDisabledScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		utilizerListDisabledPanel.add(utilizerListDisabledScroll);
+
+		listUtilizerLayout.setHorizontalGroup(listUtilizerLayout.createSequentialGroup()
+				.addGroup(listUtilizerLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+						.addComponent(utilizerListEnabledLbl).addComponent(utilizerListEnabledPanel))
+				.addGroup(listUtilizerLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+						.addComponent(utilizerListDisabledLbl).addComponent(utilizerListDisabledPanel)));
+
+		listUtilizerLayout.setVerticalGroup(listUtilizerLayout.createParallelGroup(GroupLayout.Alignment.CENTER)
+				.addGroup(listUtilizerLayout.createSequentialGroup().addComponent(utilizerListEnabledLbl)
+						.addComponent(utilizerListEnabledPanel))
+				.addGroup(listUtilizerLayout.createSequentialGroup().addComponent(utilizerListDisabledLbl)
+						.addComponent(utilizerListDisabledPanel)));
+
+		// Walls 
+		final JPanel listWallPanel = new JPanel(); // Emitters list final
+		GroupLayout listWallLayout = new GroupLayout(listWallPanel);
+		listWallPanel.setLayout(listWallLayout);
+
+		JLabel wallListEnabledLbl = new JLabel("Muri abilitati");
+		final JPanel wallListEnabledPanel = new JPanel(new BorderLayout());
+		final JTextArea wallListEnabledTxtArea = new JTextArea();
+		wallListEnabledTxtArea.setLineWrap(true);
+		final JScrollPane wallListEnabledScroll = new JScrollPane(wallListEnabledTxtArea);
+		wallListEnabledScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		wallListEnabledPanel.add(wallListEnabledScroll);
+
+		JLabel wallListDisabledLbl = new JLabel("Muri disabilitati");
+		final JPanel wallListDisabledPanel = new JPanel(new BorderLayout());
+		final JTextArea wallListDisabledTxtArea = new JTextArea();
+		wallListDisabledTxtArea.setLineWrap(true);
+		final JScrollPane wallListDisabledScroll = new JScrollPane(wallListDisabledTxtArea);
+		wallListDisabledScroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		wallListDisabledPanel.add(wallListDisabledScroll);
+
+		listWallLayout.setHorizontalGroup(listWallLayout.createSequentialGroup()
+				.addGroup(listWallLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+						.addComponent(wallListEnabledLbl).addComponent(wallListEnabledPanel))
+				.addGroup(listWallLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+						.addComponent(wallListDisabledLbl).addComponent(wallListDisabledPanel)));
+
+		listWallLayout.setVerticalGroup(listWallLayout.createParallelGroup(GroupLayout.Alignment.CENTER)
+				.addGroup(listWallLayout.createSequentialGroup().addComponent(wallListEnabledLbl)
+						.addComponent(wallListEnabledPanel))
+				.addGroup(listWallLayout.createSequentialGroup().addComponent(wallListDisabledLbl)
+						.addComponent(wallListDisabledPanel)));
+
+		listsPanel.add(listEmitterPanel);
+		listsPanel.add(listUtilizerPanel);
+		listsPanel.add(listWallPanel);
+
+		// Fine componenti
+
+		// Setting del frame
+		canvasPanelSeparator.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
+		resultPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 0, 10));
+		buttonsPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 0, 0));
+		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
+		this.setVisible(true);
+		this.setSize(1200, 1030);
+		final JPanel coverLightPanel = new JPanel(new GridLayout(2, 2));
+		this.getContentPane().add(coverLightPanel);
+		coverLightPanel.add(canvasPanelSeparator);
+		coverLightPanel.add(buttonsPanel);
+		coverLightPanel.add(resultPanel);
+		coverLightPanel.add(listsPanel);
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Btn listeners
+		captionBtn.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				final JDialog captionDialog = new JDialog();
+				captionDialog.setTitle("Didascalia");
+				final JPanel captionPanel = new JPanel(new BorderLayout());
+				final JTextArea captionTxtArea = new JTextArea();
+				captionTxtArea.setLineWrap(true);
+				captionTxtArea.setText("Effetto del materiale dell'ostacolo su un segnale radio\r\n"
+						+ "A seconda del materiale, gli ostacoli possono riflettere le onde radio, assorbirle, privandole di una parte della potenza, o non avere alcun effetto sul segnale radio. Tali materiali sono chiamati radiotrasparenti. Più alto è il coefficiente di assorbimento del segnale e più spesso è l'ostacolo, più forte è l'impatto sulla trasmissione radio.\r\n"
+						+ "Coefficiente di assorbimento del segnale\r\n" + "Basso\r\n"
+						+ "Perdita di potenza del 50%\r\n" + "- Mattone rosso secco di 90 mm di spessore\r\n"
+						+ "- Pannello di gesso di 100 mm di spessore\r\n" + "- Legno secco di 80 mm di spessore\r\n"
+						+ "- Vetro di 15 mm di spessore\r\n" + "\r\n" + "Medio\r\n"
+						+ "La potenza si riduce di 10 volte\r\n" + "- Mattone di 250 mm di spessore\r\n"
+						+ "- Blocchi di calcestruzzo di 200 mm di spessore\r\n"
+						+ "- Calcestruzzo di 100 mm di spessore\r\n" + "- Muratura di 200 mm di spessore\r\n" + "\r\n"
+						+ "Alto\r\n" + "La potenza si riduce di 100 volte\r\n"
+						+ "- Calcestruzzo di 300 mm di spessore\r\n" + "- Calcestruzzo armato di 200 mm di spessore\r\n"
+						+ "- Travi in alluminio e acciaio\r\n" + "\r\n" + "\r\n" + "Si provvede uno spazio di "
+						+ WIDTH / 100 + " metri per " + HEIGHT / 100
+						+ " in cui riprodurre la pianta dell'edificio; valori illegali saranno considerati 0.\r\n"
+						+ "Porte, finestre interne ed esterne od altre aperture fra stanze sono sempre considerate chiuse ai fini della rilevazione del segnale: si ipotizza il segnale minimo nel caso peggiore.\r\n"
+						+ "La precisione massima nel piazzamento di un muro è di " + DIM_SQUARE
+						+ " centimetri, sugli assi x e y; non si accettano muri diagonali.\r\n" + "\r\n" + "\r\n"
+						+ "Per selezionare un campo da abilitare/disabilitare/cancellare è sufficiente indicarne la posizione e premere il relativo pulsante; non serve impostare correttamente il resto dei campi.\r\n"
+						+ "\r\n" + "\r\n"
+						+ "Secondo le normative ETSI EN, la potenza di emittenti wireless in un edificio non può superare i 200 milliWatt e la frequenza deve essere compresa nella banda 5150-5350 MegaHertz \r\n"
+						+ "Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE / 2
+						+ " centimetri ed i muri si possono intersecare ma non compenetrare.\r\n"
+						+ "Gli angoli di inizio e di fine sono 0 e 360 per antenne omnidirezionali; per antenne direzionali, l'ampiezza è calcolata in senso antiorario con 0° = 360° = ore 3.\r\n");
+				final JScrollPane scroll = new JScrollPane(captionTxtArea);
+				scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+				captionTxtArea.setEditable(false);
+				captionPanel.add(scroll);
+				captionDialog.add(captionPanel);
+				captionDialog.setSize(600, 800);
+				captionDialog.setVisible(true);
+			}
+		});
+
 		createEmitter.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				powEmitTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				freqEmitterTxt.setBorder(new JTextField().getBorder());
+				angStartEmitTxt.setBorder(new JTextField().getBorder());
+				angEndEmitTxt.setBorder(new JTextField().getBorder());
+				xEmitTxt.setBorder(new JTextField().getBorder());
+				yEmitTxt.setBorder(new JTextField().getBorder());
+				emitError.setText("");
 				int xEmit, yEmit, angS, angE;
 				float pow, freq;
 				try {
@@ -598,28 +624,35 @@ public class GUI extends JFrame {
 				}
 				try {
 					pow = Float.parseFloat(powEmitTxt.getText());
-					if(pow>200 || pow<=0) {					//normative ETSI EN
-						System.out.println("La potenza non deve superare i 200 milliWatt");
+					if (pow > 200 || pow <= 0) { // normative ETSI EN
+						emitError.setText("La potenza non deve superare i 200 milliWatt");
+						powEmitTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
 						return;
 					}
 				} catch (NumberFormatException nfe) {
-					System.out.println("La potenza non deve superare i 200 milliWatt");
+					emitError.setText("La potenza non deve superare i 200 milliWatt");
+					powEmitTxt.setBorder(new LineBorder(Color.red, 1));
 					return;
 				}
 				try {
 					freq = Float.parseFloat(freqEmitterTxt.getText());
-					if((freq < 5150 || freq > 5350)) {	//normative ETSI EN
-						System.out.println("La frequenza del Wi-Fi all'interno di un edificio deve essere compresa fra 5150 e 5350 MegaHertz");
+					if ((freq < 5150 || freq > 5350)) { // normative ETSI EN
+						emitError.setText(
+								"La frequenza del Wi-Fi all'interno di un edificio deve essere compresa fra 5150 e 5350 MegaHertz");
+						freqEmitterTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
 						return;
 					}
 				} catch (NumberFormatException nfe) {
-					System.out.println("La frequenza del Wi-Fi all'interno di un edificio deve essere compresa fra 5150 e 5350 MegaHertz");
+					emitError.setText(
+							"La frequenza del Wi-Fi all'interno di un edificio deve essere compresa fra 5150 e 5350 MegaHertz");
+					freqEmitterTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
 					return;
 				}
 				try {
 					angS = Integer.parseInt(angStartEmitTxt.getText());
-					if(angS < 0 || angS >= 360) {
-						System.out.println("L'angolo d'inizio deve avere valore compreso fra 0 e 359");
+					if (angS < 0 || angS > 360) {
+						emitError.setText("Gli angoli devono avere valore compreso fra 0 e 360");
+						angStartEmitTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
 						return;
 					}
 				} catch (NumberFormatException nfe) {
@@ -628,41 +661,41 @@ public class GUI extends JFrame {
 				}
 				try {
 					angE = Integer.parseInt(angEndEmitTxt.getText());
-					if(angE <= 0 || angE > 360) {
-						System.out.println("L'angolo di fine deve avere valore compreso fra 1 e 360");
+					if (angE < 0 || angE > 360) {
+						emitError.setText("Gli angoli devono avere valore compreso fra 0 e 360");
+						angEndEmitTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
 						return;
 					}
 				} catch (NumberFormatException nfe) {
 					angEndEmitTxt.setText("360");
-					angE = 360;
+					angE = 0;
 				}
-				if(angS == angE) {
-					angS = 0;
-					angE = 360;
-					angStartEmitTxt.setText("0");
-					angEndEmitTxt.setText("360");
-				}
-				Point emit = new Point(xEmit,yEmit);
-				if(validatePosition(emit)) {
-					for(Emitters entry : apparati.get(piano+PIANO_OFFSET).keySet()) { //controllo compenetrazione
-						if(emit.distance(entry.getPosition())<DIM_SQUARE/2) {
-							System.out.println("Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE/2 + " centimetri");
+				Point emit = new Point(xEmit, yEmit);
+				if (validatePosition(emit)) {
+					for (Emitters entry : apparati.keySet()) { // controllo compenetrazione
+						if (emit.distance(entry.getPosition()) < DIM_SQUARE / 2) {
+							emitError.setText("Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE / 2
+									+ " centimetri");
+							xEmitTxt.setBorder(new LineBorder(Color.red, 1));
+							yEmitTxt.setBorder(new LineBorder(Color.red, 1));
 							return;
 						}
 					}
 					Emitters emitter = new Emitters(emit, pow, freq, angS, angE);
-					apparati.get(piano+PIANO_OFFSET).put(emitter, true);
-					drawPanel.drawEmitter(emitter);
-					emitEnabled.setText(emitEnabled.getText() + "(" + emit.x + " " + emit.y + ") " + pow + " mW  " + freq + " MHz  [" + angS + "°-" + angE + "°]    ");
-				} else {
-					System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di " + WIDTH + " e " + HEIGHT);
+					apparati.put(emitter, true);
+					drawEmitter(drawPanel.getGraphics(), emitter);
+					emitEnabled.setText(emitEnabled.getText() + "(" + emit.x + " " + emit.y + ") " + pow + " mW  "
+							+ freq + " MHz  [" + angS + "°-" + angE + "°]    ");
 				}
 			}
-		});	
+		});
 
 		deleteEmitter.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				int xEmit, yEmit;
+				xEmitTxt.setBorder(new JTextField().getBorder());
+				yEmitTxt.setBorder(new JTextField().getBorder());
+				emitError.setText("");
 				try {
 					xEmit = Integer.parseInt(xEmitTxt.getText());
 				} catch (NumberFormatException nfe) {
@@ -675,30 +708,44 @@ public class GUI extends JFrame {
 					yEmitTxt.setText("0");
 					yEmit = 0;
 				}
-				Point emit = new Point(xEmit,yEmit);
-				if(validatePosition(emit)) {
-					for(Emitters entry : apparati.get(piano+PIANO_OFFSET).keySet()) {
-						if(entry.getPosition().equals(emit)) {
-							if(apparati.get(piano+PIANO_OFFSET).get(entry)) {
-								emitEnabled.setText(emitEnabled.getText().replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  " + entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-" + entry.getAngles().y + "°]    ",""));
+				Point emit = new Point(xEmit, yEmit);
+				if (validatePosition(emit)) {
+					for (Emitters entry : apparati.keySet()) {
+						if (entry.getPosition().equals(emit)) {
+							if (apparati.get(entry)) {
+								emitEnabled.setText(emitEnabled.getText()
+										.replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  "
+												+ entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-"
+												+ entry.getAngles().y + "°]    ", ""));
 							} else {
-								emitDisabled.setText(emitDisabled.getText().replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  " + entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-" + entry.getAngles().y + "°]    ",""));
+								emitDisabled.setText(emitDisabled.getText()
+										.replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  "
+												+ entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-"
+												+ entry.getAngles().y + "°]    ", ""));
 							}
-							apparati.get(piano+PIANO_OFFSET).remove(entry);
-							drawPanel.redraw();
+							apparati.remove(entry);
+							redraw((Graphics2D) drawPanel.getGraphics());
 							return;
 						}
 					}
-				} else {
-					System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di " + WIDTH + " e " + HEIGHT);
 				}
-				System.out.println("Impossibile cancellare un valore assente");
+				emitError.setText("Impossibile cancellare un valore assente");
+				xEmitTxt.setBorder(new LineBorder(Color.red, 1));
+				yEmitTxt.setBorder(new LineBorder(Color.red, 1));
 			}
-		});	
+		});
 
 		enableDisableEmitter.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int xEmit, yEmit;
+				powEmitTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				freqEmitterTxt.setBorder(new JTextField().getBorder());
+				angStartEmitTxt.setBorder(new JTextField().getBorder());
+				angEndEmitTxt.setBorder(new JTextField().getBorder());
+				xEmitTxt.setBorder(new JTextField().getBorder());
+				yEmitTxt.setBorder(new JTextField().getBorder());
+				emitError.setText("");
+				int xEmit, yEmit, angS, angE;
+				float pow, freq;
 				try {
 					xEmit = Integer.parseInt(xEmitTxt.getText());
 				} catch (NumberFormatException nfe) {
@@ -711,50 +758,124 @@ public class GUI extends JFrame {
 					yEmitTxt.setText("0");
 					yEmit = 0;
 				}
-				Point emit = new Point(xEmit,yEmit);
-				if(validatePosition(emit)) {
-					for(Emitters entry : apparati.get(piano+PIANO_OFFSET).keySet()) {
-						if(entry.getPosition().equals(emit)) {
-							boolean flag = !apparati.get(piano+PIANO_OFFSET).get(entry);
-							apparati.get(piano+PIANO_OFFSET).replace(entry,flag);
-							if(flag) {
-								emitDisabled.setText(emitDisabled.getText().replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  " + entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-" + entry.getAngles().y + "°]    ",""));
-								emitEnabled.setText(emitEnabled.getText() + "(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  " + entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-" + entry.getAngles().y + "°]    ");
+				Point emit = new Point(xEmit, yEmit);
+				if (validatePosition(emit)) {
+					for (Emitters entry : apparati.keySet()) {
+						if (entry.getPosition().equals(emit)) {
+							boolean flag = !apparati.get(entry);
+							apparati.replace(entry, flag);
+							if (flag) {
+								emitDisabled.setText(emitDisabled.getText()
+										.replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  "
+												+ entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-"
+												+ entry.getAngles().y + "°]    ", ""));
+								emitEnabled.setText(emitEnabled.getText() + "(" + emit.x + " " + emit.y + ") "
+										+ entry.getmW() + " mW  " + entry.getMHz() + " MHz  [" + entry.getAngles().x
+										+ "°-" + entry.getAngles().y + "°]    ");
 							} else {
-								emitEnabled.setText(emitEnabled.getText().replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  " + entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-" + entry.getAngles().y + "°]    ",""));
-								emitDisabled.setText(emitDisabled.getText() + "(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  " + entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-" + entry.getAngles().y + "°]    ");
+								emitEnabled.setText(emitEnabled.getText()
+										.replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  "
+												+ entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-"
+												+ entry.getAngles().y + "°]    ", ""));
+								emitDisabled.setText(emitDisabled.getText() + "(" + emit.x + " " + emit.y + ") "
+										+ entry.getmW() + " mW  " + entry.getMHz() + " MHz  [" + entry.getAngles().x
+										+ "°-" + entry.getAngles().y + "°]    ");
 							}
-							drawPanel.redraw();
+							redraw((Graphics2D) drawPanel.getGraphics());
 							return;
 						}
 					}
-					System.out.println("Il valore inserito è inesistente; premere Crea per aggiungerlo");
-				} else {
-					System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di " + WIDTH + " e " + HEIGHT);
+					for (Emitters entry : apparati.keySet()) { // controllo compenetrazione
+						if (emit.distance(entry.getPosition()) < DIM_SQUARE / 2) {
+							emitError.setText("Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE / 2
+									+ " centimetri");
+							xEmitTxt.setBorder(new LineBorder(Color.red, 1));
+							yEmitTxt.setBorder(new LineBorder(Color.red, 1));
+							return;
+						}
+					}
+					try {
+						pow = Float.parseFloat(powEmitTxt.getText());
+						if (pow > 200 || pow <= 0) {
+							emitError.setText("La potenza non deve superare i 200 milliWatt");
+							powEmitTxt.setBorder(new LineBorder(Color.red, 1));
+							return;
+						}
+					} catch (NumberFormatException nfe) {
+						emitError.setText("La potenza non deve superare i 200 milliWatt");
+						powEmitTxt.setBorder(new LineBorder(Color.red, 1));
+						return;
+					}
+					try {
+						freq = Float.parseFloat(freqEmitterTxt.getText());
+						if ((freq < 5150 || freq > 5350)) {
+							emitError.setText(
+									"La frequenza del Wi-Fi all'interno di un edificio deve essere compresa fra 5150 e 5350 MegaHertz");
+							freqEmitterTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
+							return;
+						}
+					} catch (NumberFormatException nfe) {
+						emitError.setText(
+								"La frequenza del Wi-Fi all'interno di un edificio deve essere compresa fra 5150 e 5350 MegaHertz");
+						freqEmitterTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
+						return;
+					}
+					try {
+						angS = Integer.parseInt(angStartEmitTxt.getText());
+						if (angS < 0 || angS > 360) {
+							emitError.setText("Gli angoli devono avere valore compreso fra 0 e 360");
+							angStartEmitTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
+							return;
+						}
+					} catch (NumberFormatException nfe) {
+						angStartEmitTxt.setText("0");
+						angS = 0;
+					}
+					try {
+						angE = Integer.parseInt(angEndEmitTxt.getText());
+						if (angE < 0 || angE > 360) {
+							emitError.setText("Gli angoli devono avere valore compreso fra 0 e 360");
+							angEndEmitTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
+							return;
+						}
+					} catch (NumberFormatException nfe) {
+						angEndEmitTxt.setText("360");
+						angE = 0;
+					}
+					Emitters emitter = new Emitters(emit, pow, freq, angS, angE);
+					apparati.put(emitter, true);
+					drawEmitter(drawPanel.getGraphics(), emitter);
+					emitEnabled.setText(emitEnabled.getText() + "(" + emit.x + " " + emit.y + ") " + pow + " mW  "
+							+ freq + " MHz  [" + angS + "°-" + angE + "°]    ");
 				}
 			}
-		});	
+		});
 
 		rLow.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				impactSel = BASSO;
 			}
-		});	
-	
+		});
+
 		rMedium.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				impactSel = MEDIO;
 			}
-		});	
-	
+		});
+
 		rHigh.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				impactSel = ALTO;
 			}
-		});	
+		});
 
 		createWall.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				wallStartxTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				wallEndxTxt.setBorder(new JTextField().getBorder());
+				wallStartyTxt.setBorder(new JTextField().getBorder());
+				wallEndyTxt.setBorder(new JTextField().getBorder());
+				wallError.setText("");
 				int xWallS, yWallS, xWallE, yWallE;
 				try {
 					xWallS = Integer.parseInt(wallStartxTxt.getText());
@@ -781,32 +902,55 @@ public class GUI extends JFrame {
 					yWallE = 0;
 				}
 				Line2D wall = new Line2D.Float(xWallS, yWallS, xWallE, yWallE);
-				if(validateWallPosition(wall)) {
-					for(Walls entry : planimetria.get(piano+PIANO_OFFSET).keySet()) { //controllo compenetrazione
-						if(wall.intersectsLine(entry.getPosition()) && (!(wall.getX1() == wall.getX2() ^ entry.getPosition().getX1() == entry.getPosition().getX2())) &&
-						(wall.relativeCCW(entry.getPosition().getP1()) + wall.relativeCCW(entry.getPosition().getP2()) + entry.getPosition().relativeCCW(wall.getP1()) + entry.getPosition().relativeCCW(wall.getP2()) != -2)) {
-							System.out.println("I muri non possono compenetrarsi");
+				if (validateWallPosition(wall)) {
+					for (Walls entry : planimetria.keySet()) { // controllo compenetrazione
+						if (wall.intersectsLine(entry.getPosition())
+								&& (!(wall.getX1() == wall.getX2()
+										^ entry.getPosition().getX1() == entry.getPosition().getX2()))
+								&& (wall.relativeCCW(entry.getPosition().getP1())
+										+ wall.relativeCCW(entry.getPosition().getP2())
+										+ entry.getPosition().relativeCCW(wall.getP1())
+										+ entry.getPosition().relativeCCW(wall.getP2()) != -2)) {
+							wallError.setText("I muri non possono compenetrarsi");
+							wallStartxTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
+							wallEndxTxt.setBorder(new LineBorder(Color.red, 1));
+							wallStartyTxt.setBorder(new LineBorder(Color.red, 1));
+							wallEndyTxt.setBorder(new LineBorder(Color.red, 1));
 							return;
 						}
 					}
 					Walls walls = new Walls(wall, impactSel);
-					planimetria.get(piano+PIANO_OFFSET).put(walls, true);
-					drawPanel.drawWall(walls);
-					switch(impactSel) {
-						case BASSO: wallEnabledL.setText(wallEnabledL.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    "); break;
-						case MEDIO: wallEnabledM.setText(wallEnabledM.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    "); break;
-						case ALTO: wallEnabledH.setText(wallEnabledH.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    "); break;
-						default: return;
+					planimetria.put(walls, true);
+					drawWall((Graphics2D) drawPanel.getGraphics(), walls);
+					switch (impactSel) {
+					case BASSO:
+						wallEnabledL.setText(wallEnabledL.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " "
+								+ yWallE + ")    ");
+						break;
+					case MEDIO:
+						wallEnabledM.setText(wallEnabledM.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " "
+								+ yWallE + ")    ");
+						break;
+					case ALTO:
+						wallEnabledH.setText(wallEnabledH.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " "
+								+ yWallE + ")    ");
+						break;
+					default:
+						return;
 					}
-				} else {
-					System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di " + WIDTH + " e " + HEIGHT + ", multipli di " + DIM_SQUARE + " (centimetri), che definiscano una linea non nulla parallela ad un asse");
 				}
 			}
-		});	
+		});
 
 		deleteWall.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				int xWallS, yWallS, xWallE, yWallE;
+				wallStartxTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				wallEndxTxt.setBorder(new JTextField().getBorder());
+				wallStartyTxt.setBorder(new JTextField().getBorder());
+				wallEndyTxt.setBorder(new JTextField().getBorder());
+				wallError.setText("");
+
 				try {
 					xWallS = Integer.parseInt(wallStartxTxt.getText());
 				} catch (NumberFormatException nfe) {
@@ -832,37 +976,64 @@ public class GUI extends JFrame {
 					yWallE = 0;
 				}
 				Line2D wall = new Line2D.Float(xWallS, yWallS, xWallE, yWallE);
-				if(validateWallPosition(wall)) {
-					for(Walls entry : planimetria.get(piano+PIANO_OFFSET).keySet()) {
-						if(entry.getPosition().getP1().equals(wall.getP1()) && entry.getPosition().getP2().equals(wall.getP2())) {
-							if(planimetria.get(piano+PIANO_OFFSET).get(entry)) {
-								switch(entry.getImpact()) {
-									case BASSO: wallEnabledL.setText(wallEnabledL.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ","")); break;
-									case MEDIO: wallEnabledM.setText(wallEnabledM.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ","")); break;
-									case ALTO: wallEnabledH.setText(wallEnabledH.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ","")); break;
-									default: return;
-								}
-							} else {
-								switch(entry.getImpact()) {
-									case BASSO: wallDisabledL.setText(wallDisabledL.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ","")); break;
-									case MEDIO: wallDisabledM.setText(wallDisabledM.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ","")); break;
-									case ALTO: wallDisabledH.setText(wallDisabledH.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ","")); break;
-									default: return;
-								}
+				for (Walls entry : planimetria.keySet()) {
+					if (entry.getPosition().getP1().equals(wall.getP1())
+							&& entry.getPosition().getP2().equals(wall.getP2())) {
+						if (planimetria.get(entry)) {
+							switch (entry.getImpact()) {
+							case BASSO:
+								wallEnabledL.setText(wallEnabledL.getText().replace(
+										"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+								break;
+							case MEDIO:
+								wallEnabledM.setText(wallEnabledM.getText().replace(
+										"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+								break;
+							case ALTO:
+								wallEnabledH.setText(wallEnabledH.getText().replace(
+										"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+								break;
+							default:
+								return;
 							}
-							planimetria.get(piano+PIANO_OFFSET).remove(entry);
-							drawPanel.redraw();
-							return;
+						} else {
+							switch (entry.getImpact()) {
+							case BASSO:
+								wallDisabledL.setText(wallDisabledL.getText().replace(
+										"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+								break;
+							case MEDIO:
+								wallDisabledM.setText(wallDisabledM.getText().replace(
+										"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+								break;
+							case ALTO:
+								wallDisabledH.setText(wallDisabledH.getText().replace(
+										"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+								break;
+							default:
+								return;
+							}
 						}
+						planimetria.remove(entry);
+						redraw((Graphics2D) drawPanel.getGraphics());
+						return;
 					}
-				} else {
-					System.out.println("Impossibile cancellare un valore assente");
 				}
+				wallError.setText("Impossibile cancellare un valore assente");
+				wallStartxTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
+				wallEndxTxt.setBorder(new LineBorder(Color.red, 1));
+				wallStartyTxt.setBorder(new LineBorder(Color.red, 1));
+				wallEndyTxt.setBorder(new LineBorder(Color.red, 1));
 			}
-		});	
+		});
 
 		enableWall.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				wallStartxTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				wallEndxTxt.setBorder(new JTextField().getBorder());
+				wallStartyTxt.setBorder(new JTextField().getBorder());
+				wallEndyTxt.setBorder(new JTextField().getBorder());
+				wallError.setText("");
 				int xWallS, yWallS, xWallE, yWallE;
 				try {
 					xWallS = Integer.parseInt(wallStartxTxt.getText());
@@ -889,58 +1060,107 @@ public class GUI extends JFrame {
 					yWallE = 0;
 				}
 				Line2D wall = new Line2D.Float(xWallS, yWallS, xWallE, yWallE);
-				if(validateWallPosition(wall)) {
-					for(Walls entry : planimetria.get(piano+PIANO_OFFSET).keySet()) {
-						if(entry.getPosition().getP1().equals(wall.getP1()) && entry.getPosition().getP2().equals(wall.getP2())) {
-							boolean flag = !(planimetria.get(piano+PIANO_OFFSET).get(entry));
-							planimetria.get(piano+PIANO_OFFSET).replace(entry, flag);
-							if(flag) {
-								drawPanel.drawWall(entry);
-								switch(entry.getImpact()) {
-									case BASSO:
-										wallDisabledL.setText(wallDisabledL.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ",""));
-										wallEnabledL.setText(wallEnabledL.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ");
-										break; 
-									case MEDIO:
-										wallDisabledM.setText(wallDisabledM.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ",""));
-										wallEnabledM.setText(wallEnabledM.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ");
-										break;
-									case ALTO:
-										wallDisabledH.setText(wallDisabledH.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ",""));
-										wallEnabledH.setText(wallEnabledH.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ");
-										break; 
-									default: return;
+				if (validateWallPosition(wall)) {
+					for (Walls entry : planimetria.keySet()) {
+						if (entry.getPosition().getP1().equals(wall.getP1())
+								&& entry.getPosition().getP2().equals(wall.getP2())) {
+							boolean flag = !(planimetria.get(entry));
+							planimetria.replace(entry, flag);
+							if (flag) {
+								drawWall(drawPanel.getGraphics(), entry);
+								switch (entry.getImpact()) {
+								case BASSO:
+									wallDisabledL.setText(wallDisabledL.getText().replace(
+											"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+									wallEnabledL.setText(wallEnabledL.getText() + "(" + xWallS + " " + yWallS + ")-("
+											+ xWallE + " " + yWallE + ")    ");
+									break;
+								case MEDIO:
+									wallDisabledM.setText(wallDisabledM.getText().replace(
+											"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+									wallEnabledM.setText(wallEnabledM.getText() + "(" + xWallS + " " + yWallS + ")-("
+											+ xWallE + " " + yWallE + ")    ");
+									break;
+								case ALTO:
+									wallDisabledH.setText(wallDisabledH.getText().replace(
+											"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+									wallEnabledH.setText(wallEnabledH.getText() + "(" + xWallS + " " + yWallS + ")-("
+											+ xWallE + " " + yWallE + ")    ");
+									break;
+								default:
+									return;
 								}
 							} else {
-								drawPanel.redraw();
-								switch(entry.getImpact()) {
-									case BASSO:
-										wallEnabledL.setText(wallEnabledL.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ",""));
-										wallDisabledL.setText(wallDisabledL.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ");
-										break; 
-									case MEDIO:
-										wallEnabledM.setText(wallEnabledM.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ",""));
-										wallDisabledM.setText(wallDisabledM.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ");
-										break;
-									case ALTO:
-										wallEnabledH.setText(wallEnabledH.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ",""));
-										wallDisabledH.setText(wallDisabledH.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE  + ")    ");
-										break; 
-									default: return;
+								redraw(drawPanel.getGraphics());
+								switch (entry.getImpact()) {
+								case BASSO:
+									wallEnabledL.setText(wallEnabledL.getText().replace(
+											"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+									wallDisabledL.setText(wallDisabledL.getText() + "(" + xWallS + " " + yWallS + ")-("
+											+ xWallE + " " + yWallE + ")    ");
+									break;
+								case MEDIO:
+									wallEnabledM.setText(wallEnabledM.getText().replace(
+											"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+									wallDisabledM.setText(wallDisabledM.getText() + "(" + xWallS + " " + yWallS + ")-("
+											+ xWallE + " " + yWallE + ")    ");
+									break;
+								case ALTO:
+									wallEnabledH.setText(wallEnabledH.getText().replace(
+											"(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ")    ", ""));
+									wallDisabledH.setText(wallDisabledH.getText() + "(" + xWallS + " " + yWallS + ")-("
+											+ xWallE + " " + yWallE + ")    ");
+									break;
+								default:
+									return;
 								}
 							}
 							return;
 						}
 					}
-					System.out.println("Il valore inserito è inesistente; premere Crea per aggiungerlo");
-				} else {
-					System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di " + WIDTH + " e " + HEIGHT + ", multipli di " + DIM_SQUARE + " (centimetri), che definiscano una linea non nulla parallela ad un asse");
+					for (Walls entry : planimetria.keySet()) { // controllo compenetrazione
+						if (wall.intersectsLine(entry.getPosition())
+								&& ((wall.getP1().distance(entry.getPosition().getP1()) + wall.getP2()
+										.distance(entry.getPosition().getP1()) == wall.getP1().distance(wall.getP2())
+										|| (wall.getP1().distance(entry.getPosition().getP2())
+												+ wall.getP2().distance(entry.getPosition().getP2()) == wall.getP1()
+														.distance(wall.getP2()))))) {
+							wallError.setText("I muri non possono compenetrarsi");
+							wallStartxTxt.setBorder(new LineBorder(Color.red, 1));// Set border to red
+							wallEndxTxt.setBorder(new LineBorder(Color.red, 1));
+							wallStartyTxt.setBorder(new LineBorder(Color.red, 1));
+							wallEndyTxt.setBorder(new LineBorder(Color.red, 1));
+							return;
+						}
+					}
+					Walls walls = new Walls(wall, impactSel);
+					planimetria.put(walls, true);
+					drawWall((Graphics2D) drawPanel.getGraphics(), walls);
+					switch (impactSel) {
+					case BASSO:
+						wallEnabledL.setText(wallEnabledL.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " "
+								+ yWallE + ")    ");
+						break;
+					case MEDIO:
+						wallEnabledM.setText(wallEnabledM.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " "
+								+ yWallE + ")    ");
+						break;
+					case ALTO:
+						wallEnabledH.setText(wallEnabledH.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " "
+								+ yWallE + ")    ");
+						break;
+					default:
+						return;
+					}
 				}
 			}
-		});	
+		});
 
 		createUtilizer.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				xUtilTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				yUtilTxt.setBorder(new JTextField().getBorder());
+				utilError.setText("");
 				int xUtil, yUtil;
 				try {
 					xUtil = Integer.parseInt(xUtilTxt.getText());
@@ -954,62 +1174,29 @@ public class GUI extends JFrame {
 					yUtilTxt.setText("0");
 					yUtil = 0;
 				}
-				Point util = new Point(xUtil,yUtil);
-				if(validatePosition(util)) {
-					for(Utilizers entry : consumatori.get(piano+PIANO_OFFSET).keySet()) {
-						if(entry.getPosition().equals(util)) {
-							System.out.println("Valore già presente");
+				Point util = new Point(xUtil, yUtil);
+				if (validatePosition(util)) {
+					for (Utilizers entry : consumatori.keySet()) {
+						if (entry.getPosition().equals(util)) {
+							utilError.setText("Valore già presente");
+							xUtilTxt.setBorder(new JTextField().getBorder());// Reset dei border
+							yUtilTxt.setBorder(new JTextField().getBorder());
 							return;
 						}
 					}
 					Utilizers utilizzatore = new Utilizers(util);
-					consumatori.get(piano+PIANO_OFFSET).put(utilizzatore, true);
-					drawPanel.drawUtilizer(util);
+					consumatori.put(utilizzatore, true);
+					drawUtilizer((Graphics2D) drawPanel.getGraphics(), util);
 					utilEnabled.setText(utilEnabled.getText() + "(" + util.x + " " + util.y + ")    ");
-				} else {
-					System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di " + WIDTH + " e " + HEIGHT);
-				}
-			}
-		});	
-
-		deleteUtilizer.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int xUtil, yUtil;
-				try {
-					xUtil = Integer.parseInt(xUtilTxt.getText());
-				} catch (NumberFormatException nfe) {
-					xUtilTxt.setText("0");
-					xUtil = 0;
-				}
-				try {
-					yUtil = Integer.parseInt(yUtilTxt.getText());
-				} catch (NumberFormatException nfe) {
-					yUtilTxt.setText("0");
-					yUtil = 0;
-				}
-				Point util = new Point(xUtil,yUtil);
-				if(validatePosition(util)) {
-					for(Utilizers entry : consumatori.get(piano+PIANO_OFFSET).keySet()) {
-						if(entry.getPosition().equals(util)) {
-							if(consumatori.get(piano+PIANO_OFFSET).get(entry)) {
-								utilEnabled.setText(utilEnabled.getText().replace("(" + util.x + " " + util.y + ")    ",""));
-							} else {
-								utilDisabled.setText(utilDisabled.getText().replace("(" + util.x + " " + util.y + ")    ",""));
-							}
-							consumatori.get(piano+PIANO_OFFSET).remove(entry);
-							drawPanel.redraw();
-							return;
-						}
-					}
-					System.out.println("Impossibile cancellare un valore assente");
-				} else {
-					System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di " + WIDTH + " e " + HEIGHT);
 				}
 			}
 		});
-		
-		enableUtilizer.addActionListener(new ActionListener() {
+
+		deleteUtilizer.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				xUtilTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				yUtilTxt.setBorder(new JTextField().getBorder());
+				utilError.setText("");
 				int xUtil, yUtil;
 				try {
 					xUtil = Integer.parseInt(xUtilTxt.getText());
@@ -1023,258 +1210,159 @@ public class GUI extends JFrame {
 					yUtilTxt.setText("0");
 					yUtil = 0;
 				}
-				Point util = new Point(xUtil,yUtil);
-				if(validatePosition(util)) {
-					for(Utilizers entry : consumatori.get(piano+PIANO_OFFSET).keySet()) {
-						if(entry.getPosition().equals(util)) {
-							boolean flag = !(consumatori.get(piano+PIANO_OFFSET).get(entry));
-							consumatori.get(piano+PIANO_OFFSET).replace(entry, flag);
-							if(flag) {
-								drawPanel.drawUtilizer(util);
-								utilEnabled.setText(utilEnabled.getText() + "(" + util.x + " " + util.y + ")    ");
-								utilDisabled.setText(utilDisabled.getText().replace("(" + util.x + " " + util.y + ")    ",""));
+				Point util = new Point(xUtil, yUtil);
+				if (validatePosition(util)) {
+					for (Utilizers entry : consumatori.keySet()) {
+						if (entry.getPosition().equals(util)) {
+							if (consumatori.get(entry)) {
+								utilEnabled.setText(
+										utilEnabled.getText().replace("(" + util.x + " " + util.y + ")    ", ""));
 							} else {
-								drawPanel.redraw();
+								utilDisabled.setText(
+										utilDisabled.getText().replace("(" + util.x + " " + util.y + ")    ", ""));
+							}
+							consumatori.remove(entry);
+							redraw((Graphics2D) drawPanel.getGraphics());
+							return;
+						}
+					}
+				}
+				utilError.setText("Impossibile cancellare un valore assente");
+				xUtilTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				yUtilTxt.setBorder(new JTextField().getBorder());
+			}
+		});
+
+		enableUtilizer.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				xUtilTxt.setBorder(new JTextField().getBorder());// Reset dei border
+				yUtilTxt.setBorder(new JTextField().getBorder());
+				utilError.setText("");
+				int xUtil, yUtil;
+				try {
+					xUtil = Integer.parseInt(xUtilTxt.getText());
+				} catch (NumberFormatException nfe) {
+					xUtilTxt.setText("0");
+					xUtil = 0;
+				}
+				try {
+					yUtil = Integer.parseInt(yUtilTxt.getText());
+				} catch (NumberFormatException nfe) {
+					yUtilTxt.setText("0");
+					yUtil = 0;
+				}
+				Point util = new Point(xUtil, yUtil);
+				if (validatePosition(util)) {
+					for (Utilizers entry : consumatori.keySet()) {
+						if (entry.getPosition().equals(util)) {
+							boolean flag = !(consumatori.get(entry));
+							consumatori.replace(entry, flag);
+							if (flag) {
+								drawUtilizer((Graphics2D) drawPanel.getGraphics(), util);
+								utilEnabled.setText(utilEnabled.getText() + "(" + util.x + " " + util.y + ")    ");
+								utilDisabled.setText(
+										utilDisabled.getText().replace("(" + util.x + " " + util.y + ")    ", ""));
+							} else {
+								redraw((Graphics2D) drawPanel.getGraphics());
 								utilDisabled.setText(utilDisabled.getText() + "(" + util.x + " " + util.y + ")    ");
-								utilEnabled.setText(utilEnabled.getText().replace("(" + util.x + " " + util.y + ")    ",""));
+								utilEnabled.setText(
+										utilEnabled.getText().replace("(" + util.x + " " + util.y + ")    ", ""));
 							}
 							return;
 						}
 					}
-					System.out.println("Il valore inserito è inesistente; premere Crea per aggiungerlo");
-					/*Utilizers utilizzatore = new Utilizers(util);
+					Utilizers utilizzatore = new Utilizers(util);
 					consumatori.put(utilizzatore, true);
-					drawUtilizer((Graphics2D) drawPanel.getGraphics(),util);
-					utilEnabled.setText(utilEnabled.getText() + "(" + util.x + " " + util.y + ")    ");*/
-				} else {
-					System.out.println("Errore: la posizione deve essere una coppia di numeri positivi minori rispettivamente di " + WIDTH + " e " + HEIGHT);
+					drawUtilizer((Graphics2D) drawPanel.getGraphics(), util);
+					utilEnabled.setText(utilEnabled.getText() + "(" + util.x + " " + util.y + ")    ");
 				}
 			}
-		});	
-		
+		});
+
 		generateResult.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				double int_tot, int_em, attenuazione, angolo, radStart, radEnd;
 				resultPanel.getGraphics().clearRect(0, 0, WIDTH, HEIGHT);
-				//coloro la mappa come prima cosa cosicché muri ed emittenti sovrascrivano i colori e non viceversa
-				if(apparati.get(piano+PIANO_OFFSET).containsValue(true)) {
-					for (i = DIM_SQUARE/2; i < HEIGHT; i += DIM_SQUARE) {
-						for (j = DIM_SQUARE/2; j < WIDTH; j += DIM_SQUARE) {
+				// coloro la mappa come prima cosa cosicché muri ed emittenti sovrascrivano i
+				// colori e non viceversa
+				if (apparati.containsValue(true)) {
+					for (i = DIM_SQUARE / 2; i < HEIGHT; i += DIM_SQUARE) {
+						for (j = DIM_SQUARE / 2; j < WIDTH; j += DIM_SQUARE) {
 							int_tot = 0;
-							for(Map.Entry<Emitters,Boolean> entryE : apparati.get(piano+PIANO_OFFSET).entrySet()) {
-								if(!entryE.getValue()) { continue; }
+							for (Map.Entry<Emitters, Boolean> entryE : apparati.entrySet()) {
+								if (!entryE.getValue()) {
+									continue;
+								}
 								int_em = entryE.getKey().getmW();
-								if((entryE.getKey().getAngles().y - entryE.getKey().getAngles().x)<360) {
-									angolo = (double) Math.atan2(i - entryE.getKey().getPosition().y, j - entryE.getKey().getPosition().x);
-									if(angolo<0) {
-										angolo += 2*Math.PI;
+								if ((entryE.getKey().getAngles().y - entryE.getKey().getAngles().x) < 360) {
+									angolo = (double) Math.atan2(i - entryE.getKey().getPosition().y,
+											j - entryE.getKey().getPosition().x);
+									if (angolo < 0) {
+										angolo += 2 * Math.PI;
 									}
 									radStart = Math.toRadians(entryE.getKey().getAngles().x);
 									radEnd = Math.toRadians(entryE.getKey().getAngles().y);
-									if(radEnd<radStart) {
-										radEnd += 2*Math.PI;
+									if (radEnd < radStart) {
+										radEnd += 2 * Math.PI;
 									}
-									if(radStart > angolo || radEnd < angolo) {
+									if (radStart > angolo || radEnd < angolo) {
 										continue;
 									}
-									int_em = int_em * (2*Math.PI) / (radEnd - radStart);		//le antenne direzionali hanno guadagno sul fronte
-								}																//1 elemento=1 cm; divido per 100 per convertire in metri
-								
-								attenuazione = -27.55 + 20*(Math.log10(Math.sqrt(Math.pow(((double) i- (double) entryE.getKey().getPosition().y)/100,2)+Math.pow(((double) j- (double) entryE.getKey().getPosition().x)/100,2))) + Math.log10((double) entryE.getKey().getMHz()));
-								for(Map.Entry<Walls,Boolean> entryM : planimetria.get(piano+PIANO_OFFSET).entrySet()) {
-									if(!entryM.getValue()) { continue; }
-									
-									if(Line2D.linesIntersect(entryM.getKey().getPosition().getX1(),entryM.getKey().getPosition().getY1(),entryM.getKey().getPosition().getX2(),entryM.getKey().getPosition().getY2(),entryE.getKey().getPosition().x,-entryE.getKey().getPosition().y,j,i)) {
-										switch(entryM.getKey().getImpact()) {
-											case BASSO: int_em /= 2; break;
-											case MEDIO: int_em /= 10; break;
-											case ALTO: int_em /= 100; break;
-											default: continue;
+									int_em = int_em * (2 * Math.PI) / (radEnd - radStart); // le antenne direzionali
+																							// hanno guadagno sul fronte
+								} // 1 elemento=1 cm; divido per 100 per convertire in metri
+
+								attenuazione = -27.55 + 20 * (Math.log10(Math.sqrt(Math
+										.pow(((double) i - (double) entryE.getKey().getPosition().y) / 100, 2)
+										+ Math.pow(((double) j - (double) entryE.getKey().getPosition().x) / 100, 2)))
+										+ Math.log10((double) entryE.getKey().getMHz()));
+								for (Map.Entry<Walls, Boolean> entryM : planimetria.entrySet()) {
+									if (!entryM.getValue()) {
+										continue;
+									}
+
+									if (Line2D.linesIntersect(entryM.getKey().getPosition().getX1(),
+											entryM.getKey().getPosition().getY1(),
+											entryM.getKey().getPosition().getX2(),
+											entryM.getKey().getPosition().getY2(), entryE.getKey().getPosition().x,
+											-entryE.getKey().getPosition().y, j, i)) {
+										switch (entryM.getKey().getImpact()) {
+										case BASSO:
+											int_em /= 2;
+											break;
+										case MEDIO:
+											int_em /= 10;
+											break;
+										case ALTO:
+											int_em /= 100;
+											break;
+										default:
+											continue;
 										}
 									}
 								}
-								int_em = 10*Math.log10(int_em) - attenuazione - MIN_INT;
-								if(int_em > 0) {
+								int_em = 10 * Math.log10(int_em) - attenuazione - MIN_INT;
+								if (int_em > 0) {
 									int_tot += int_em;
 								}
 							}
-							if(int_tot >= 0) {
-								intensity[i/DIM_SQUARE][j/DIM_SQUARE][piano+PIANO_OFFSET] = int_tot;
-								int_tot = 0;
-								for(int p=0; p<PIANO_OFFSET*4; p++) {
-									int_tot += intensity[i/DIM_SQUARE][j/DIM_SQUARE][p]/(Math.pow(100,Math.abs(piano + PIANO_OFFSET - p)));
+							if (int_tot >= 0) {
+								risultato = (int) Math.floor(int_tot / 15);
+								if (risultato > 4) {
+									risultato = 4;
 								}
-							    risultato = (int) Math.floor(int_tot);
-							    resultPanel.paintRectangle();
+								paintComponent(resultPanel.getGraphics());
 							}
 						}
 					}
-				} else {
-					int_tot = 0;
-					for (i = DIM_SQUARE/2; i < HEIGHT; i += DIM_SQUARE) {
-						for (j = DIM_SQUARE/2; j < WIDTH; j += DIM_SQUARE) {
-							for(int p=0; p<PIANO_OFFSET*4; p++) {
-								int_tot += intensity[i/DIM_SQUARE][j/DIM_SQUARE][p]/(Math.pow(100,Math.abs(piano + PIANO_OFFSET - p)));
-							}
-						    risultato = (int) Math.floor(int_tot);
-						    resultPanel.paintRectangle();
-						}
-					}
 				}
-				resultPanel.result(valueCheck.isSelected());
+				result(resultPanel.getGraphics()); // sarebbe meglio un modo per copiare la mappa con background
+													// trasparente
 			}
 		});
-		
-		lowerFloor.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if(piano == PIANO_OFFSET*3) {
-					upperFloor.setEnabled(true);
-				}
-				piano--;
-				if(piano + PIANO_OFFSET == 0) {
-					lowerFloor.setEnabled(false);
-				}
-				drawPanel.redraw();
-				resultPanel.redraw();
-				emitEnabled.setText("");
-				emitEnabled.setText("");
-				wallEnabledL.setText("");
-				wallEnabledM.setText("");
-				wallEnabledH.setText("");
-				wallDisabledL.setText("");
-				wallDisabledM.setText("");
-				wallDisabledH.setText("");
-				utilEnabled.setText("");
-				utilDisabled.setText("");
-				for(Map.Entry<Emitters,Boolean> entry : apparati.get(piano+PIANO_OFFSET).entrySet()) {
-					if(entry.getValue()) {
-						emitEnabled.setText(emitEnabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
-						
-					} else {
-						emitDisabled.setText(emitDisabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
-					}
-				}
-				for(Map.Entry<Walls, Boolean> entry : planimetria.get(piano+PIANO_OFFSET).entrySet()) {
-					if(entry.getValue()) {
-						switch(entry.getKey().getImpact()) {
-							case BASSO: wallEnabledL.setText(wallEnabledL.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break; 
-							case MEDIO: wallEnabledM.setText(wallEnabledM.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break;
-							case ALTO: wallEnabledH.setText(wallEnabledH.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break; 
-							default: continue;
-						}
-					} else {
-						switch(entry.getKey().getImpact()) {
-							case BASSO:	wallDisabledL.setText(wallDisabledL.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break; 
-							case MEDIO:	wallDisabledM.setText(wallDisabledM.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break;
-							case ALTO: wallDisabledH.setText(wallDisabledH.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break; 
-							default: continue;
-						}
-					}
-				}
-				for(Map.Entry<Utilizers,Boolean> entry : consumatori.get(piano+PIANO_OFFSET).entrySet()) {
-					if(entry.getValue()) {
-						utilEnabled.setText(utilEnabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
-					} else {
-						utilDisabled.setText(utilDisabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
-					}
-				}
-				lowerFloor.setText("Vai a piano " + (piano-1));
-				currentFloor.setText("Piano: " + piano);
-				upperFloor.setText("Vai a piano " + (piano+1));
-			}
-		});	
-
-		upperFloor.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if(piano + PIANO_OFFSET == 0) {
-					lowerFloor.setEnabled(true);
-				}
-				piano++;
-				if(piano == PIANO_OFFSET*3) {
-					upperFloor.setEnabled(false);
-				}
-				drawPanel.redraw();
-				resultPanel.redraw();
-				emitEnabled.setText("");
-				emitEnabled.setText("");
-				wallEnabledL.setText("");
-				wallEnabledM.setText("");
-				wallEnabledH.setText("");
-				wallDisabledL.setText("");
-				wallDisabledM.setText("");
-				wallDisabledH.setText("");
-				utilEnabled.setText("");
-				utilDisabled.setText("");
-				for(Map.Entry<Emitters,Boolean> entry : apparati.get(piano+PIANO_OFFSET).entrySet()) {
-					if(entry.getValue()) {
-						emitEnabled.setText(emitEnabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
-						
-					} else {
-						emitDisabled.setText(emitDisabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
-					}
-				}
-				for(Map.Entry<Walls, Boolean> entry : planimetria.get(piano+PIANO_OFFSET).entrySet()) {
-					if(entry.getValue()) {
-						switch(entry.getKey().getImpact()) {
-							case BASSO: wallEnabledL.setText(wallEnabledL.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break; 
-							case MEDIO: wallEnabledM.setText(wallEnabledM.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break;
-							case ALTO: wallEnabledH.setText(wallEnabledH.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break; 
-							default: continue;
-						}
-					} else {
-						switch(entry.getKey().getImpact()) {
-							case BASSO:	wallDisabledL.setText(wallDisabledL.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break; 
-							case MEDIO:	wallDisabledM.setText(wallDisabledM.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break;
-							case ALTO: wallDisabledH.setText(wallDisabledH.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ")    "); break; 
-							default: continue;
-						}
-					}
-				}
-				for(Map.Entry<Utilizers,Boolean> entry : consumatori.get(piano+PIANO_OFFSET).entrySet()) {
-					if(entry.getValue()) {
-						utilEnabled.setText(utilEnabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
-					} else {
-						utilDisabled.setText(utilDisabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
-					}
-				}
-				lowerFloor.setText("Vai a piano " + (piano-1));
-				currentFloor.setText("Piano: " + piano);
-				upperFloor.setText("Vai a piano " + (piano+1));
-			}
-		});	
-
-		duplicateMap.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				int nuovoPiano;
-				try {
-					nuovoPiano = Integer.parseInt(duplicateMapTxt.getText());
-				} catch (NumberFormatException nfe) {
-					System.out.println("Il piano deve essere un numero da " + -PIANO_OFFSET + " a " + PIANO_OFFSET*3 + ", diverso dal piano corrente");
-					return;
-				}
-				if(nuovoPiano>=-PIANO_OFFSET && nuovoPiano<=PIANO_OFFSET*3 && nuovoPiano != piano) {
-					copyFloor(nuovoPiano, drawPanel.getGraphics(), resultPanel.getGraphics());
-				} else {
-					System.out.println("Il piano deve essere un numero da " + -PIANO_OFFSET + " a " + PIANO_OFFSET*3 + ", diverso dal piano corrente");
-				}
-			}
-		});
-			
-    //Setting del frame
-		resultPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
-		buttonsPanel.setBorder(BorderFactory.createEmptyBorder(40, 0, 0, 0));
-		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
-		this.setVisible(true);
-		this.setSize(1200, 1030);
-		final JPanel coverLightPanel = new JPanel(new GridLayout(2, 2));
-		this.getContentPane().add(coverLightPanel);
-		coverLightPanel.add(captionPanel);
-		coverLightPanel.add(buttonsPanel);
-		coverLightPanel.add(canvasPanel);
-		coverLightPanel.add(resultPanel);
 	}
 
 	public static void main(String[] args) {
-	    new GUI();
+		new GUI();
 	}
 }
