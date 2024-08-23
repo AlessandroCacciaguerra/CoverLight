@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GUI extends JFrame {
+	//test
 	static final int DIM_SQUARE = 50;	//un valore divisibile per 2 e per cui width e height sono divisibili
 	static final int WIDTH = 1000;		//10 metri
 	static final int HEIGHT = 800;		//8 metri
