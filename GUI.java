@@ -30,7 +30,6 @@ public class GUI extends JFrame {
 	static double[][][] intensity = new double[HEIGHT/DIM_SQUARE][WIDTH/DIM_SQUARE][PIANO_OFFSET*4];
 	static int i, j, risultato;
 	
-	//TODO: Andrea: aggiungere pulsante per didascalia
 	private static final long serialVersionUID = 1L;
 
 	static java.util.List<HashMap<Emitters, Boolean>> apparati = new ArrayList<HashMap<Emitters, Boolean>>();		//mappa di emittenti
@@ -82,7 +81,7 @@ public class GUI extends JFrame {
 				utilDisabled.setText(utilDisabled.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
 			}
 		}
-	}*/
+	}TODO*/
 	
 	private void copyFloor(int nuovoPiano, Graphics draw, Graphics result) {
 		apparati.set(nuovoPiano+PIANO_OFFSET, apparati.get(piano+PIANO_OFFSET));
@@ -144,14 +143,23 @@ public class GUI extends JFrame {
 	}
 
 	private void drawWall(Graphics graphics, Walls muro) {
-		final BasicStroke muratura = new BasicStroke(5);
-		((Graphics2D) graphics).setStroke(muratura);
+		int muratura;
 		switch(muro.getImpact()) {
-			case BASSO: graphics.setColor(Color.GRAY);		break;
-			case MEDIO: graphics.setColor(Color.DARK_GRAY);	break;
-			case ALTO:  graphics.setColor(Color.BLACK);		break;
+			case BASSO:
+				graphics.setColor(Color.GRAY);
+				muratura = 5;
+				break;
+			case MEDIO:
+				graphics.setColor(Color.DARK_GRAY);
+				muratura = 7;
+				break;
+			case ALTO:
+				graphics.setColor(Color.BLACK);
+				muratura = 9;
+				break;
 			default: return;
 		}
+		((Graphics2D) graphics).setStroke(new BasicStroke(muratura));
         graphics.drawLine((int) muro.getPosition().getX1(),(int) muro.getPosition().getY1(),(int) muro.getPosition().getX2(),(int) muro.getPosition().getY2());
 	}
 
@@ -162,6 +170,7 @@ public class GUI extends JFrame {
 
 	
 	public GUI() {
+		JCheckBox valueCheck = new JCheckBox("Valori esatti (dbm)", false);//TODO
 		for(int p=0; p<=PIANO_OFFSET*4; p++) {
 			apparati.add(new HashMap<Emitters,Boolean>());
 			planimetria.add(new HashMap<Walls,Boolean>());
@@ -208,9 +217,10 @@ public class GUI extends JFrame {
 				+ "Su ogni piano, si provvede uno spazio di " + WIDTH/100 + " metri per " + HEIGHT/100 + " in cui riprodurre la pianta dell'edificio; valori illegali saranno considerati 0.\r\n"
 				+ "Porte, finestre interne ed esterne od altre aperture fra stanze sono sempre considerate chiuse ai fini della rilevazione del segnale: si ipotizza il segnale minimo nel caso peggiore.\r\n"
 				+ "La precisione massima nel piazzamento di un muro è di " + DIM_SQUARE + " centimetri, sugli assi x e y; non si accettano muri diagonali.\r\n"
+				+ "Piani strutturati inframmezzati da piani vuoti od incompleti sono tollerati: si presume che le relative planimetrie siano ininfluenti ai fini della simulazione dell'utente.\r\n"
 				+ "\r\n"
 				+ "\r\n"
-				+ "L'intensità del segnale è così rappresentata:\r\n"
+				+ "L'intensità del segnale è così rappresentata (dbm: decibel milliwatt):\r\n"
 				+ "Da -75 a -90 dbm: " + COL0 + "\r\n"
 				+ "Da -60 a -75 dbm: " + COL1 + "\r\n"
 				+ "Da -45 a -60 dbm: " + COL2 + "\r\n"
@@ -1124,6 +1134,9 @@ public class GUI extends JFrame {
 							    risultato = (int) Math.floor(int_tot/15);
 							    if(risultato>4) {risultato=4;}
 							    paintComponent(resultPanel.getGraphics());
+							    if(valueCheck.isSelected()) {
+							    	resultPanel.getGraphics().drawString(String.valueOf((int) int_tot+MIN_INT), j, i);
+							    }
 							}
 						}
 					}
