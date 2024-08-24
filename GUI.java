@@ -1214,7 +1214,7 @@ public class GUI extends JFrame {
 									if (radEnd < radStart) {
 										radEnd += 2 * Math.PI;
 									}
-									if (radStart > angolo || radEnd < angolo) {
+									if (!(radStart > angolo || radEnd < angolo)) {
 										continue;
 									}
 									int_em = int_em * (2 * Math.PI) / (radEnd - radStart); // le antenne direzionali hanno guadagno sul fronte
@@ -1233,7 +1233,7 @@ public class GUI extends JFrame {
 											entryM.getKey().getPosition().getY1(),
 											entryM.getKey().getPosition().getX2(),
 											entryM.getKey().getPosition().getY2(), entryE.getKey().getPosition().x,
-											-entryE.getKey().getPosition().y, j, i)) {
+											entryE.getKey().getPosition().y, j, i)) {
 										switch (entryM.getKey().getImpact()) {
 										case BASSO:
 											int_em /= 2;
