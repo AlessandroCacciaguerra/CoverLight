@@ -62,7 +62,7 @@ public class GUI extends JFrame {
 			g.fillRect(j - DIM_SQUARE/2+1,i - DIM_SQUARE/2+1, DIM_SQUARE-1, DIM_SQUARE-1);
 		}
 		
-		private void result(boolean writeValues) {
+		private void result() {
 			for(Map.Entry<Emitters,Boolean> entry : building.get(piano+piano_offset).apparati.entrySet()) {
 				if(entry.getValue()) {
 					drawEmitter(entry.getKey());
@@ -78,15 +78,12 @@ public class GUI extends JFrame {
 					drawUtilizer(entry.getKey().getPosition());
 				}
 			}
-			if(writeValues) {
-				writeComponent();
-			}
 		}
 		
 		private void redraw() {
 			Graphics g = this.getGraphics();
 			g.clearRect(0, 0, WIDTH, HEIGHT);
-			result(false);
+			result();
 		}
 		
 		private void drawUtilizer(Point draw) {
@@ -107,7 +104,7 @@ public class GUI extends JFrame {
 		private void drawEmitter(Emitters emittente) {
 			Graphics g = this.getGraphics();
 			g.setColor(Color.BLACK);
-			g.fillArc(emittente.getPosition().x-DIM_SQUARE/2,emittente.getPosition().y-DIM_SQUARE/2,DIM_SQUARE,DIM_SQUARE,emittente.getAngles().x,Math.abs(emittente.getAngles().y-emittente.getAngles().x));
+			g.fillArc(emittente.getPosition().x-DIM_SQUARE/2,emittente.getPosition().y-DIM_SQUARE/2,DIM_SQUARE,DIM_SQUARE,emittente.getAngles().x,-Math.abs(emittente.getAngles().y-emittente.getAngles().x));
 		}
 
 		private void drawWall(Walls muro) {
@@ -132,12 +129,12 @@ public class GUI extends JFrame {
 			g.drawLine((int) muro.getPosition().getX1(),(int) muro.getPosition().getY1(),(int) muro.getPosition().getX2(),(int) muro.getPosition().getY2());
 		}
 
-		private void writeComponent() {
+		private void writeComponent(double[][] valori) {
 			Graphics g = this.getGraphics();
 			g.setColor(Color.WHITE);
 			for (i = 0; i < HEIGHT/DIM_SQUARE; i++) {
 				for (j = 0; j < WIDTH/DIM_SQUARE; j++) {
-					g.drawString(String.valueOf((int) building.get(piano+piano_offset).intensity[i][j]+MIN_INT), j*DIM_SQUARE+DIM_SQUARE*3/10, i*DIM_SQUARE+DIM_SQUARE*6/10);
+					g.drawString(String.valueOf((int) valori[i][j]+MIN_INT), j*DIM_SQUARE+DIM_SQUARE*3/10, i*DIM_SQUARE+DIM_SQUARE*6/10);
 				}
 			}
 		}
@@ -596,11 +593,13 @@ public class GUI extends JFrame {
 						+ "La precisione massima nel piazzamento di un muro è di " + DIM_SQUARE + " centimetri, sugli assi x e y; non si accettano muri diagonali.\r\n"
 						+ "Piani strutturati inframmezzati da piani vuoti od incompleti sono tollerati: si presume che le relative planimetrie siano ininfluenti ai fini della simulazione dell'utente.\r\n"
 						+ "\r\n" + "\r\n" + "L'intensità del segnale è così rappresentata (dbm: decibel milliwatt):\r\n"
-						+ "Da -75 a -90 dbm: " + COL0 + "\r\n" + "Da -60 a -75 dbm: " + COL1 + "\r\n" + "Da -45 a -60 dbm: " + COL2 + "\r\n" + "Da -30 a -45 dbm: " + COL3 + "\r\n" + "> -30 dbm: " + COL4 + "\r\n" + "\r\n"
+						+ "Da -75 a -90 dbm: rosso\r\n" + "Da -60 a -75 dbm: arancione\r\n" + "Da -45 a -60 dbm: giallo\r\n" + "Da -30 a -45 dbm: verde\r\n" + "> -30 dbm: ciano\r\n" + "\r\n"
 						+ "\r\n" + "Per selezionare un campo da abilitare/disabilitare/cancellare è sufficiente indicarne la posizione e premere il relativo pulsante; non serve impostare correttamente il resto dei campi.\r\n"
 						+ "\r\n" + "\r\n" + "Secondo le normative ETSI EN, la potenza di emittenti wireless in un edificio non può superare i 200 milliWatt e la frequenza deve essere compresa nella banda 5150-5350 MegaHertz.\r\n"
 						+ "Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE / 2 + " centimetri ed i muri si possono intersecare ma non compenetrare.\r\n"
-						+ "Gli angoli di inizio e di fine sono 0 e 360 per antenne omnidirezionali; per antenne direzionali, l'ampiezza è calcolata in senso antiorario con 0° = 360° = ore 3.\r\n");
+						+ "Gli angoli di inizio e di fine sono 0 e 360 per antenne omnidirezionali; per antenne direzionali, l'ampiezza è calcolata in senso orario con 0° = 360° = ore 3.\r\n"
+						+ "\r\n" + "Si presume che tutti gli emittenti, direzionali ed omnidirezionali, siano ottimizzati per trasmettere segnali nel piano in cui sono collocati: i segnali propagati verticalmente sono considerati diffusione.\r\n"
+						+ "Il guadagno rispetto ad un'emittente isotropica si ritiene già incluso nella potenza; se così non fosse, triplicare quanto si intendeva inserire\r\n");
 				final JScrollPane scroll = new JScrollPane(captionTxtArea);
 				scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 				captionTxtArea.setEditable(false);
@@ -1190,7 +1189,8 @@ public class GUI extends JFrame {
 
 		generateResult.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				double int_tot, int_em, attenuazione, angolo, radStart, radEnd;
+				double[][] values = new double[HEIGHT/DIM_SQUARE][WIDTH/DIM_SQUARE];
+				double int_tot, int_em, att_air, attenuazione, angolo, radStart, radEnd;
 				resultPanel.getGraphics().clearRect(0, 0, WIDTH, HEIGHT);
 				// coloro la mappa come prima cosa cosicché muri ed emittenti sovrascrivano i colori e non viceversa
 				if (building.get(piano+piano_offset).apparati.containsValue(true)) {
@@ -1213,7 +1213,7 @@ public class GUI extends JFrame {
 									if (radEnd < radStart) {
 										radEnd += 2 * Math.PI;
 									}
-									if (!(radStart > angolo || radEnd < angolo)) {
+									if (!(radStart <= angolo && radEnd >= angolo)) {
 										continue;
 									}
 									int_em = int_em * (2 * Math.PI) / (radEnd - radStart); // le antenne direzionali hanno guadagno sul fronte
@@ -1232,17 +1232,17 @@ public class GUI extends JFrame {
 											entryM.getKey().getPosition().getX2(), entryM.getKey().getPosition().getY2(),
 											entryE.getKey().getPosition().x, entryE.getKey().getPosition().y, j, i)) {
 										switch (entryM.getKey().getImpact()) {
-										case BASSO:
-											int_em /= 2;
-											break;
-										case MEDIO:
-											int_em /= 10;
-											break;
-										case ALTO:
-											int_em /= 100;
-											break;
-										default:
-											continue;
+											case BASSO:
+												int_em /= 2;
+												break;
+											case MEDIO:
+												int_em /= 10;
+												break;
+											case ALTO:
+												int_em /= 100;
+												break;
+											default:
+												continue;
 										}
 									}
 								}
@@ -1254,32 +1254,69 @@ public class GUI extends JFrame {
 							if(int_tot < 0) {
 								int_tot = 0;
 							}
-							building.get(piano+piano_offset).intensity[i/DIM_SQUARE][j/DIM_SQUARE] = int_tot;
-							int_tot = 0;
-							for(int p=0; p<building.size(); p++) {
-								int_tot += building.get(p).intensity[i/DIM_SQUARE][j/DIM_SQUARE]/(Math.pow(100,Math.abs(piano + piano_offset - p)));
+							building.get(piano+piano_offset).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2] = int_tot;
+							int_em = 0;
+							for(int p=0; p<piano+piano_offset; p++) {
+								att_air = building.get(p).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2]-20*((piano+piano_offset-p)*3+2.343)-MIN_INT;	//la componente del segnale nel piano diffusa verso il piano superiore
+								if(att_air<0) {	//si presume che gli apparati (emittenti ed utilizzatori) siano tutti collocati alla medesima altezza del pavimento e che ogni piano sia alto tre metri
+									att_air = 0;
+								}
+								int_em = (int_em + att_air)/2;
 							}
+							int_tot += int_em;
+							int_em = 0;
+							for(int p=building.size()-1; p>piano+piano_offset; p--) {
+								att_air = building.get(p).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2]-20*((p-(piano+piano_offset))*3+2.343)-MIN_INT;
+								if(att_air<0) {
+									att_air = 0;
+								}
+								int_em = (int_em + att_air)/2;
+							}
+							int_tot += int_em;
 							if(int_tot > 0) {
+								if(currentFloorCB.isSelected()) {
+									values[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2] = int_tot;
+								}
 							    risultato = (int) Math.floor(int_tot);
 							    resultPanel.paintRectangle();
 							}
 						}
 					}
 				} else {
-					int_tot = 0;
-					for (i = DIM_SQUARE/2; i < HEIGHT; i += DIM_SQUARE) {
-						for (j = DIM_SQUARE/2; j < WIDTH; j += DIM_SQUARE) {
-							for(int p=0; p<building.size(); p++) {
-								int_tot += building.get(p).intensity[i/DIM_SQUARE][j/DIM_SQUARE]/(Math.pow(100,Math.abs(piano + piano_offset - p)));
+					for (i = 0; i < HEIGHT/DIM_SQUARE; i++) {
+						for (j = 0; j < WIDTH/DIM_SQUARE; j++) {
+							int_em = 0;
+							for(int p=0; p<piano+piano_offset; p++) {
+								att_air = building.get(p).intensity[i][j]-20*((piano+piano_offset-p)*3+2.343)-MIN_INT;
+								if(att_air<0) {
+									att_air = 0;
+								}
+								int_em = (int_em + att_air)/2;
 							}
+							int_tot = int_em;
+							int_em = 0;
+							for(int p=building.size(); p>piano+piano_offset; p--) {
+								att_air = building.get(p).intensity[i][j]-20*((p-(piano+piano_offset))*3+2.343)-MIN_INT;
+								if(att_air<0) {
+									att_air = 0;
+								}
+								int_em = (int_em + att_air)/2;
+							}
+							int_tot += int_em;
 							if(int_tot > 0) {
+								if(currentFloorCB.isSelected()) {
+									values[i][j] = int_tot;
+								}
 								risultato = (int) Math.floor(int_tot);
 								resultPanel.paintRectangle();
 							}
 						}
 					}
 				}
-				resultPanel.result(currentFloorCB.isSelected());
+				resultPanel.result();
+				if(currentFloorCB.isSelected()) {
+					resultPanel.writeComponent(values);
+				}
 			}
 		});
 		
