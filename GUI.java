@@ -107,7 +107,7 @@ public class GUI extends JFrame {
 		private void drawEmitter(Emitters emittente) {
 			Graphics g = this.getGraphics();
 			g.setColor(Color.BLACK);
-			g.fillArc(emittente.getPosition().x,emittente.getPosition().y,DIM_SQUARE,DIM_SQUARE,emittente.getAngles().x,Math.abs(emittente.getAngles().y-emittente.getAngles().x));
+			g.fillArc(emittente.getPosition().x-DIM_SQUARE/2,emittente.getPosition().y-DIM_SQUARE/2,DIM_SQUARE,DIM_SQUARE,emittente.getAngles().x,Math.abs(emittente.getAngles().y-emittente.getAngles().x));
 		}
 
 		private void drawWall(Walls muro) {
