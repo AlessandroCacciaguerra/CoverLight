@@ -182,21 +182,29 @@ public class GUI extends JFrame {
 		
 		//Pulsanti piano
 		final JPanel canvasFloorPanel = new JPanel(new BorderLayout());
-		canvasFloorPanel.setBorder(new JTextField().getBorder());
+		//canvasFloorPanel.setBorder(new JTextField().getBorder());
 		
 		//Pusanti e label per i piani
+		final JPanel canvasFloorContainerPanel = new JPanel(new BorderLayout());
+		
 		final JPanel canvasFloorBtnPanel = new JPanel(new FlowLayout());
 		final JButton previousFloorBtn = new JButton("Crea piano -1");
 		final JLabel currentFloorLbl = new JLabel("Piano: " + piano);
 		final JButton NextFloorBtn = new JButton("Crea piano 1");		
-		final JButton duplicateMapBtn = new JButton("Copia su piano");	
-		duplicateMapBtn.setEnabled(false); //non ha senso copiare mentre c'è un solo piano
-		final JTextField duplicateMapTxt = new JTextField();
 		canvasFloorBtnPanel.add(previousFloorBtn);
 		canvasFloorBtnPanel.add(currentFloorLbl);
-		canvasFloorBtnPanel.add(NextFloorBtn);	
-		canvasFloorBtnPanel.add(duplicateMapBtn);	
-		canvasFloorBtnPanel.add(duplicateMapTxt);	
+		canvasFloorBtnPanel.add(NextFloorBtn);			
+		
+		final JPanel canvasFloorCopyPanel = new JPanel(new FlowLayout());
+		final JButton duplicateMapBtn = new JButton("Copia su piano");	
+		duplicateMapBtn.setEnabled(false);//non ha senso copiare mentre c'è un solo piano
+		final JTextField duplicateMapTxt = new JTextField();
+		duplicateMapTxt.setColumns(3);//Setta la size della txtbox nel flowlayout									
+		//canvasFloorCopyPanel.add(duplicateMapBtn);//in 2 linee	
+		//canvasFloorCopyPanel.add(duplicateMapTxt);	
+		canvasFloorBtnPanel.add(duplicateMapBtn);	//tutto in una linea
+		canvasFloorBtnPanel.add(duplicateMapTxt);
+		
 		
 		//checkbox
 		final JPanel canvasCheckboxPanel = new JPanel(new BorderLayout());
@@ -207,11 +215,14 @@ public class GUI extends JFrame {
 		canvasFloorPanel.add(canvasFloorBtnPanel, BorderLayout.CENTER);
 		canvasFloorPanel.add(canvasCheckboxPanel, BorderLayout.LINE_END);
 		
+		canvasFloorContainerPanel.add(canvasFloorPanel, BorderLayout.CENTER);
+		canvasFloorContainerPanel.add(canvasFloorCopyPanel, BorderLayout.PAGE_END);
 		
 		//Aggiunta a canvas panel
 		canvasPanel.add(canvasTitlePanel, BorderLayout.PAGE_START);
 		canvasPanel.add(scrollCanvas, BorderLayout.CENTER);
-		canvasPanel.add(canvasFloorPanel, BorderLayout.PAGE_END);
+		canvasPanel.add(canvasFloorPanel, BorderLayout.PAGE_END);//tutto in una linea
+		//canvasPanel.add(canvasFloorContainerPanel, BorderLayout.PAGE_END);//in 2 linee
 		
 	// fine Canvas
 
