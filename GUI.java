@@ -191,6 +191,7 @@ public class GUI extends JFrame {
 		final JButton duplicateMapBtn = new JButton("Copia su piano");	
 		duplicateMapBtn.setEnabled(false); //non ha senso copiare mentre c'è un solo piano
 		final JTextField duplicateMapTxt = new JTextField();
+		duplicateMapTxt.setColumns(3);
 		canvasFloorBtnPanel.add(previousFloorBtn);
 		canvasFloorBtnPanel.add(currentFloorLbl);
 		canvasFloorBtnPanel.add(NextFloorBtn);	
