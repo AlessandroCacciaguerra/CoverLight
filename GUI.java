@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GUI extends JFrame {
-	//test
 	static final int DIM_SQUARE = 50;	//un valore divisibile per 2 e per cui width e height sono divisibili
 	static final int WIDTH = 1000;		//10 metri
 	static final int HEIGHT = 800;		//8 metri
@@ -24,13 +23,14 @@ public class GUI extends JFrame {
 	static final Color COL2 = Color.YELLOW;		//Da -45 a -60 dbm
 	static final Color COL3 = Color.GREEN;		//Da -30 a -45 dbm
 	static final Color COL4 = Color.CYAN;		//> -30 dbm					valore più alto
-	static final Color[] TONI = {COL0, COL1, COL2, COL3, COL4};//TODO:assicurarsi che il set di colori sia accessibile ai daltonici
+	static Color[] toni = {COL0, COL1, COL2, COL3, COL4};
+	static int index = 0;
 	static final String BASSO = "Basso";
 	static final String MEDIO = "Medio";
 	static final String ALTO = "Alto";
 	static String impactSel = MEDIO;
 	static int piano = 0;
-	static int piano_offset = 0;
+	static int pianoOffset = 0;
 	static int i, j, risultato;
 
 	private static final long serialVersionUID = 1L;
@@ -38,12 +38,12 @@ public class GUI extends JFrame {
 	static ArrayList<floor> building = new ArrayList<floor>();
 	class floor {
 		private HashMap<Emitters, Boolean> apparati = new HashMap<Emitters, Boolean>();		//mappa di emittenti
-		private HashMap<Walls, Boolean> planimetria = new HashMap<Walls, Boolean>();			//mappa di muri
+		private HashMap<Walls, Boolean> planimetria = new HashMap<Walls, Boolean>();		//mappa di muri
 		private HashMap<Utilizers,Boolean> consumatori = new HashMap<Utilizers, Boolean>();	//mappa di utilizzatori
 		private double[][] intensity = new double[HEIGHT/DIM_SQUARE][WIDTH/DIM_SQUARE];
 		
 		private void copyFloor(int nuovoPiano) {
-			building.set(nuovoPiano+piano_offset, floor.this);
+			building.set(nuovoPiano+pianoOffset, floor.this);
 			piano = nuovoPiano;
 		}		
 	}
@@ -58,22 +58,22 @@ public class GUI extends JFrame {
 			Graphics g = this.getGraphics();
 			int colore = (int) Math.floor(risultato/15);
 			if(colore>4) { colore=4; }
-			g.setColor(TONI[colore]);
+			g.setColor(toni[colore]);
 			g.fillRect(j - DIM_SQUARE/2+1,i - DIM_SQUARE/2+1, DIM_SQUARE-1, DIM_SQUARE-1);
 		}
 		
 		private void result() {
-			for(Map.Entry<Emitters,Boolean> entry : building.get(piano+piano_offset).apparati.entrySet()) {
+			for(Map.Entry<Emitters,Boolean> entry : building.get(piano+pianoOffset).apparati.entrySet()) {
 				if(entry.getValue()) {
 					drawEmitter(entry.getKey());
 				}
 			}
-			for(Map.Entry<Walls, Boolean> entry : building.get(piano+piano_offset).planimetria.entrySet()) {
+			for(Map.Entry<Walls, Boolean> entry : building.get(piano+pianoOffset).planimetria.entrySet()) {
 				if(entry.getValue()) {
 					drawWall(entry.getKey());
 				}
 			}
-			for(Map.Entry<Utilizers,Boolean> entry : building.get(piano+piano_offset).consumatori.entrySet()) {
+			for(Map.Entry<Utilizers,Boolean> entry : building.get(piano+pianoOffset).consumatori.entrySet()) {
 				if(entry.getValue()) {
 					drawUtilizer(entry.getKey().getPosition());
 				}
@@ -171,7 +171,6 @@ public class GUI extends JFrame {
 		canvasTitlePanel.add(canvasTitleLbl, BorderLayout.LINE_START);
 		canvasTitlePanel.add(captionBtn, BorderLayout.LINE_END);
 		canvasTitlePanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 20));
-		//canvasTitlePanel.setBorder(new JTextField().getBorder());
 		
 		// Area di disegno del canvas
 		final JPanel canvasContainerPanel = new JPanel(new BorderLayout());// panel che contiene lo scroll
@@ -185,26 +184,18 @@ public class GUI extends JFrame {
 		//canvasFloorPanel.setBorder(new JTextField().getBorder());
 		
 		//Pusanti e label per i piani
-		final JPanel canvasFloorContainerPanel = new JPanel(new BorderLayout());
-		
 		final JPanel canvasFloorBtnPanel = new JPanel(new FlowLayout());
 		final JButton previousFloorBtn = new JButton("Crea piano -1");
 		final JLabel currentFloorLbl = new JLabel("Piano: " + piano);
 		final JButton NextFloorBtn = new JButton("Crea piano 1");		
+		final JButton duplicateMapBtn = new JButton("Copia su piano");	
+		duplicateMapBtn.setEnabled(false); //non ha senso copiare mentre c'è un solo piano
+		final JTextField duplicateMapTxt = new JTextField();
 		canvasFloorBtnPanel.add(previousFloorBtn);
 		canvasFloorBtnPanel.add(currentFloorLbl);
-		canvasFloorBtnPanel.add(NextFloorBtn);			
-		
-		final JPanel canvasFloorCopyPanel = new JPanel(new FlowLayout());
-		final JButton duplicateMapBtn = new JButton("Copia su piano");	
-		duplicateMapBtn.setEnabled(false);//non ha senso copiare mentre c'è un solo piano
-		final JTextField duplicateMapTxt = new JTextField();
-		duplicateMapTxt.setColumns(3);//Setta la size della txtbox nel flowlayout									
-		//canvasFloorCopyPanel.add(duplicateMapBtn);//in 2 linee	
-		//canvasFloorCopyPanel.add(duplicateMapTxt);	
-		canvasFloorBtnPanel.add(duplicateMapBtn);	//tutto in una linea
-		canvasFloorBtnPanel.add(duplicateMapTxt);
-		
+		canvasFloorBtnPanel.add(NextFloorBtn);	
+		canvasFloorBtnPanel.add(duplicateMapBtn);	
+		canvasFloorBtnPanel.add(duplicateMapTxt);	
 		
 		//checkbox
 		final JPanel canvasCheckboxPanel = new JPanel(new BorderLayout());
@@ -215,14 +206,10 @@ public class GUI extends JFrame {
 		canvasFloorPanel.add(canvasFloorBtnPanel, BorderLayout.CENTER);
 		canvasFloorPanel.add(canvasCheckboxPanel, BorderLayout.LINE_END);
 		
-		canvasFloorContainerPanel.add(canvasFloorPanel, BorderLayout.CENTER);
-		canvasFloorContainerPanel.add(canvasFloorCopyPanel, BorderLayout.PAGE_END);
-		
 		//Aggiunta a canvas panel
 		canvasPanel.add(canvasTitlePanel, BorderLayout.PAGE_START);
 		canvasPanel.add(scrollCanvas, BorderLayout.CENTER);
-		canvasPanel.add(canvasFloorPanel, BorderLayout.PAGE_END);//tutto in una linea
-		//canvasPanel.add(canvasFloorContainerPanel, BorderLayout.PAGE_END);//in 2 linee
+		canvasPanel.add(canvasFloorPanel, BorderLayout.PAGE_END);
 		
 	// fine Canvas
 
@@ -586,6 +573,45 @@ public class GUI extends JFrame {
 				captionDialog.setTitle("Didascalia");
 				final JPanel captionPanel = new JPanel(new BorderLayout());
 				final JTextArea captionTxtArea = new JTextArea();
+
+				final JLabel captionLbl = new JLabel("L'intensità del segnale è così rappresentata (dbm: decibel milliwatt)");
+				final JMenuBar colorMenuBar = new JMenuBar();
+				final JMenu colorMenu = new JMenu("Range");
+				final JMenuItem menu0 = new JMenuItem("Da -75 a -90 dbm");
+				final JMenuItem menu1 = new JMenuItem("Da -60 a -75 dbm");
+				final JMenuItem menu2 = new JMenuItem("Da -45 a -60 dbm");
+				final JMenuItem menu3 = new JMenuItem("Da -30 a -45 dbm");
+				final JMenuItem menu4 = new JMenuItem("> -30 dbm");
+				final JLabel captionLblR = new JLabel("R");
+				final JTextField captionTxtR = new JTextField();
+				final JLabel captionLblG = new JLabel("G");
+				final JTextField captionTxtG = new JTextField();
+				final JLabel captionLblB = new JLabel("B");
+				final JTextField captionTxtB = new JTextField();
+				final JLabel captionError = new JLabel();
+				final JButton changeColorBtn = new JButton("Applica");
+
+				GroupLayout colorLayout = new GroupLayout(captionPanel);
+				captionPanel.setLayout(colorLayout);
+				colorLayout.setHorizontalGroup(colorLayout.createSequentialGroup()
+						.addGroup(colorLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+								.addComponent(captionTxtArea))
+						.addGroup(colorLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+								.addComponent(captionLbl).addComponent(colorMenuBar))
+						.addGroup(colorLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+								.addComponent(captionLblR).addComponent(captionTxtR).addComponent(captionLblG).addComponent(captionTxtG).addComponent(captionLblB).addComponent(captionTxtB))
+						.addGroup(colorLayout.createParallelGroup(GroupLayout.Alignment.LEADING)
+										.addComponent(captionError).addComponent(changeColorBtn)));
+
+				colorLayout.setVerticalGroup(colorLayout.createParallelGroup(GroupLayout.Alignment.CENTER)
+						.addGroup(colorLayout.createSequentialGroup().addComponent(captionTxtArea))
+						.addGroup(colorLayout.createSequentialGroup().addComponent(captionLbl)
+								.addComponent(colorMenuBar))
+						.addGroup(colorLayout.createSequentialGroup()
+								.addComponent(captionLblR).addComponent(captionTxtR).addComponent(captionLblG).addComponent(captionTxtG).addComponent(captionLblB).addComponent(captionTxtB))
+						.addGroup(colorLayout.createSequentialGroup().addComponent(captionError)
+								.addComponent(changeColorBtn)));
+
 				captionTxtArea.setLineWrap(true);
 				captionTxtArea.setText("Effetto del materiale dell'ostacolo su un segnale radio\r\n"
 						+ "A seconda del materiale, gli ostacoli possono riflettere le onde radio, assorbirle, privandole di una parte della potenza, o non avere alcun effetto sul segnale radio. Tali materiali sono chiamati radiotrasparenti. Più alto è il coefficiente di assorbimento del segnale e più spesso è l'ostacolo, più forte è l'impatto sulla trasmissione radio.\r\n"
@@ -603,9 +629,7 @@ public class GUI extends JFrame {
 						+ "Porte, finestre interne ed esterne od altre aperture fra stanze sono sempre considerate chiuse ai fini della rilevazione del segnale: si ipotizza il segnale minimo nel caso peggiore.\r\n"
 						+ "La precisione massima nel piazzamento di un muro è di " + DIM_SQUARE + " centimetri, sugli assi x e y; non si accettano muri diagonali.\r\n"
 						+ "Piani strutturati inframmezzati da piani vuoti od incompleti sono tollerati: si presume che le relative planimetrie siano ininfluenti ai fini della simulazione dell'utente.\r\n"
-						+ "\r\n" + "\r\n" + "L'intensità del segnale è così rappresentata (dbm: decibel milliwatt):\r\n"
-						+ "Da -75 a -90 dbm: rosso\r\n" + "Da -60 a -75 dbm: arancione\r\n" + "Da -45 a -60 dbm: giallo\r\n" + "Da -30 a -45 dbm: verde\r\n" + "> -30 dbm: ciano\r\n" + "\r\n"
-						+ "\r\n" + "Per selezionare un campo da abilitare/disabilitare/cancellare è sufficiente indicarne la posizione e premere il relativo pulsante; non serve impostare correttamente il resto dei campi.\r\n"
+						+ "\r\n" + "\r\n" + "Per selezionare un campo da abilitare/disabilitare/cancellare è sufficiente indicarne la posizione e premere il relativo pulsante; non serve impostare correttamente il resto dei campi.\r\n"
 						+ "\r\n" + "\r\n" + "Secondo le normative ETSI EN, la potenza di emittenti wireless in un edificio non può superare i 200 milliWatt e la frequenza deve essere compresa nella banda 5150-5350 MegaHertz.\r\n"
 						+ "Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE / 2 + " centimetri ed i muri si possono intersecare ma non compenetrare.\r\n"
 						+ "Gli angoli di inizio e di fine sono 0 e 360 per antenne omnidirezionali; per antenne direzionali, l'ampiezza è calcolata in senso orario con 0° = 360° = ore 3.\r\n"
@@ -614,10 +638,115 @@ public class GUI extends JFrame {
 				final JScrollPane scroll = new JScrollPane(captionTxtArea);
 				scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 				captionTxtArea.setEditable(false);
+				
+				colorMenuBar.add(colorMenu);
+				colorMenu.add(menu0);
+				colorMenu.add(menu1);
+				colorMenu.add(menu2);
+				colorMenu.add(menu3);
+				colorMenu.add(menu4);
+
 				captionPanel.add(scroll);
+				captionPanel.add(captionLbl);
+				captionPanel.add(colorMenuBar);
+				captionPanel.add(captionLblR);
+				captionPanel.add(captionTxtR);
+				captionPanel.add(captionLblG);
+				captionPanel.add(captionTxtG);
+				captionPanel.add(captionLblB);
+				captionPanel.add(captionTxtB);
+				captionPanel.add(captionError);
+				captionPanel.add(changeColorBtn);
 				captionDialog.add(captionPanel);
-				captionDialog.setSize(600, 800);
+				captionDialog.add(captionPanel);
+				captionDialog.setSize(800, 800);
 				captionDialog.setVisible(true);
+				
+				menu0.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						index = 0;
+						captionTxtR.setText("" + toni[index].getRed());
+						captionTxtG.setText("" + toni[index].getGreen());
+						captionTxtB.setText("" + toni[index].getBlue());
+					}
+				});
+				
+				menu1.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						index = 1;
+						captionTxtR.setText("" + toni[index].getRed());
+						captionTxtG.setText("" + toni[index].getGreen());
+						captionTxtB.setText("" + toni[index].getBlue());
+					}
+				});
+				
+				menu2.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						index = 2;
+						captionTxtR.setText("" + toni[index].getRed());
+						captionTxtG.setText("" + toni[index].getGreen());
+						captionTxtB.setText("" + toni[index].getBlue());
+					}
+				});
+				
+				menu3.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						index = 3;
+						captionTxtR.setText("" + toni[index].getRed());
+						captionTxtG.setText("" + toni[index].getGreen());
+						captionTxtB.setText("" + toni[index].getBlue());
+					}
+				});
+				
+				menu4.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						index = 4;
+						captionTxtR.setText("" + toni[index].getRed());
+						captionTxtG.setText("" + toni[index].getGreen());
+						captionTxtB.setText("" + toni[index].getBlue());
+					}
+				});
+				
+				changeColorBtn.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						captionTxtR.setBorder(new JTextField().getBorder());
+						captionTxtG.setBorder(new JTextField().getBorder());
+						captionTxtB.setBorder(new JTextField().getBorder());
+						captionError.setText("");
+						int r = 0, g = 0, b = 0;
+						try {
+							r = Integer.parseInt(captionTxtR.getText());
+						} catch (NumberFormatException nfe) {
+							captionTxtR.setBorder(new LineBorder(Color.red, 1));
+						}
+						try {
+							g = Integer.parseInt(captionTxtG.getText());
+						} catch (NumberFormatException nfe) {
+							captionTxtG.setBorder(new LineBorder(Color.red, 1));
+						}
+						try {
+							b = Integer.parseInt(captionTxtB.getText());
+						} catch (NumberFormatException nfe) {
+							captionTxtB.setBorder(new LineBorder(Color.red, 1));
+						}
+						if(r>=0 && g>=0 && b>=0 && r<=255 && g<=255 && b<=255) {
+							Color nuovoColore = new Color(r, g, b);
+							if(nuovoColore == Color.white || nuovoColore == Color.gray || nuovoColore == Color.darkGray || nuovoColore == Color.black) {
+								captionError.setText("Non si accettano i colori bianco, grigio, grigio scuro e nero perché già usati altrove nell'applicazione");
+							} else {
+								for(int count = 0; count < 5; count++) {
+									if(toni[index] == nuovoColore) {
+										captionError.setText("Colore già presente");
+										return;
+									}
+								}
+								toni[index] = nuovoColore;
+							}
+						} else {
+							captionError.setText("I tre colori devono essere compresi fra 0 e 255");
+						}
+					}
+				});
 			}
 		});
 
@@ -694,7 +823,7 @@ public class GUI extends JFrame {
 				}
 				Point emit = new Point(xEmit, yEmit);
 				if(validatePosition(emit)) {
-					for(Emitters entry : building.get(piano+piano_offset).apparati.keySet()) { //controllo compenetrazione
+					for(Emitters entry : building.get(piano+pianoOffset).apparati.keySet()) { //controllo compenetrazione
 						if (emit.distance(entry.getPosition()) < DIM_SQUARE / 2) {
 							emitError.setText("Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE / 2
 									+ " centimetri");
@@ -704,7 +833,7 @@ public class GUI extends JFrame {
 						}
 					}
 					Emitters emitter = new Emitters(emit, pow, freq, angS, angE);
-					building.get(piano+piano_offset).apparati.put(emitter, true);
+					building.get(piano+pianoOffset).apparati.put(emitter, true);
 					drawPanel.drawEmitter(emitter);
 					emitterListEnabledTxtArea.setText(emitterListEnabledTxtArea.getText() + "(" + emit.x + " " + emit.y + ") " + pow + " mW  "
 							+ freq + " MHz  [" + angS + "°-" + angE + "°]    ");
@@ -732,9 +861,9 @@ public class GUI extends JFrame {
 				}
 				Point emit = new Point(xEmit, yEmit);
 				if (validatePosition(emit)) {
-					for (Emitters entry : building.get(piano+piano_offset).apparati.keySet()) {
+					for (Emitters entry : building.get(piano+pianoOffset).apparati.keySet()) {
 						if (entry.getPosition().equals(emit)) {
-							if (building.get(piano+piano_offset).apparati.get(entry)) {
+							if (building.get(piano+pianoOffset).apparati.get(entry)) {
 								emitterListEnabledTxtArea.setText(emitterListEnabledTxtArea.getText()
 										.replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  "
 												+ entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-"
@@ -745,7 +874,7 @@ public class GUI extends JFrame {
 												+ entry.getMHz() + " MHz  [" + entry.getAngles().x + "°-"
 												+ entry.getAngles().y + "°]    ", ""));
 							}
-							building.get(piano+piano_offset).apparati.remove(entry);
+							building.get(piano+pianoOffset).apparati.remove(entry);
 							drawPanel.redraw();
 							return;
 						}
@@ -782,10 +911,10 @@ public class GUI extends JFrame {
 				}
 				Point emit = new Point(xEmit, yEmit);
 				if (validatePosition(emit)) {
-					for (Emitters entry : building.get(piano+piano_offset).apparati.keySet()) {
+					for (Emitters entry : building.get(piano+pianoOffset).apparati.keySet()) {
 						if (entry.getPosition().equals(emit)) {
-							boolean flag = !building.get(piano+piano_offset).apparati.get(entry);
-							building.get(piano+piano_offset).apparati.replace(entry, flag);
+							boolean flag = !building.get(piano+pianoOffset).apparati.get(entry);
+							building.get(piano+pianoOffset).apparati.replace(entry, flag);
 							if (flag) {
 								emitterListDisabledTxtArea.setText(emitterListDisabledTxtArea.getText()
 										.replace("(" + emit.x + " " + emit.y + ") " + entry.getmW() + " mW  "
@@ -807,7 +936,7 @@ public class GUI extends JFrame {
 							return;
 						}
 					}
-					for (Emitters entry : building.get(piano+piano_offset).apparati.keySet()) { // controllo compenetrazione
+					for (Emitters entry : building.get(piano+pianoOffset).apparati.keySet()) { // controllo compenetrazione
 						if (emit.distance(entry.getPosition()) < DIM_SQUARE / 2) {
 							emitError.setText("Gli emittenti devono essere distanziati di almeno " + DIM_SQUARE / 2
 									+ " centimetri");
@@ -865,7 +994,7 @@ public class GUI extends JFrame {
 						angE = 0;
 					}
 					Emitters emitter = new Emitters(emit, pow, freq, angS, angE);
-					building.get(piano+piano_offset).apparati.put(emitter, true);
+					building.get(piano+pianoOffset).apparati.put(emitter, true);
 					drawPanel.drawEmitter(emitter);
 					emitterListEnabledTxtArea.setText(emitterListEnabledTxtArea.getText() + "(" + emit.x + " " + emit.y + ") " + pow + " mW  "
 							+ freq + " MHz  [" + angS + "°-" + angE + "°]    ");
@@ -925,7 +1054,7 @@ public class GUI extends JFrame {
 				}
 				Line2D wall = new Line2D.Float(xWallS, yWallS, xWallE, yWallE);
 				if (validateWallPosition(wall)) {
-					for (Walls entry : building.get(piano+piano_offset).planimetria.keySet()) { // controllo compenetrazione
+					for (Walls entry : building.get(piano+pianoOffset).planimetria.keySet()) { // controllo compenetrazione
 						if (wall.intersectsLine(entry.getPosition())	//si intersecano
 								&& (!(wall.getX1() == wall.getX2() ^ entry.getPosition().getX1() == entry.getPosition().getX2()))	//sono collineari
 								&& (Math.max(Math.max(wall.getP1().distance(entry.getPosition().getP1()),wall.getP1().distance(entry.getPosition().getP2())),Math.max(entry.getPosition().getP1().distance(wall.getP2()),entry.getPosition().getP2().distance(wall.getP2())))
@@ -939,7 +1068,7 @@ public class GUI extends JFrame {
 						}
 					}
 					Walls walls = new Walls(wall, impactSel);
-					building.get(piano+piano_offset).planimetria.put(walls, true);
+					building.get(piano+pianoOffset).planimetria.put(walls, true);
 					drawPanel.drawWall(walls);
 					wallListEnabledTxtArea.setText(wallListEnabledTxtArea.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ") " + impactSel + "    ");
 				}
@@ -980,15 +1109,15 @@ public class GUI extends JFrame {
 					yWallE = 0;
 				}
 				Line2D wall = new Line2D.Float(xWallS, yWallS, xWallE, yWallE);
-				for (Walls entry : building.get(piano+piano_offset).planimetria.keySet()) {
+				for (Walls entry : building.get(piano+pianoOffset).planimetria.keySet()) {
 					if (entry.getPosition().getP1().equals(wall.getP1())
 							&& entry.getPosition().getP2().equals(wall.getP2())) {
-						if (building.get(piano+piano_offset).planimetria.get(entry)) {
+						if (building.get(piano+pianoOffset).planimetria.get(entry)) {
 							wallListEnabledTxtArea.setText(wallListEnabledTxtArea.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ") " + entry.getImpact() + "    ", ""));
 						} else {
 							wallListDisabledTxtArea.setText(wallListDisabledTxtArea.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ") " + entry.getImpact() + "    ", ""));
 						}
-						building.get(piano+piano_offset).planimetria.remove(entry);
+						building.get(piano+pianoOffset).planimetria.remove(entry);
 						drawPanel.redraw();
 						return;
 					}
@@ -1035,11 +1164,11 @@ public class GUI extends JFrame {
 				}
 				Line2D wall = new Line2D.Float(xWallS, yWallS, xWallE, yWallE);
 				if (validateWallPosition(wall)) {
-					for (Walls entry : building.get(piano+piano_offset).planimetria.keySet()) {
+					for (Walls entry : building.get(piano+pianoOffset).planimetria.keySet()) {
 						if (entry.getPosition().getP1().equals(wall.getP1())
 								&& entry.getPosition().getP2().equals(wall.getP2())) {
-							boolean flag = !(building.get(piano+piano_offset).planimetria.get(entry));
-							building.get(piano+piano_offset).planimetria.replace(entry, flag);
+							boolean flag = !(building.get(piano+pianoOffset).planimetria.get(entry));
+							building.get(piano+pianoOffset).planimetria.replace(entry, flag);
 							if (flag) {
 								drawPanel.drawWall(entry);
 								wallListDisabledTxtArea.setText(wallListDisabledTxtArea.getText().replace("(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ") " + entry.getImpact() + "    ", ""));
@@ -1052,7 +1181,7 @@ public class GUI extends JFrame {
 							return;
 						}
 					}
-					for (Walls entry : building.get(piano+piano_offset).planimetria.keySet()) { // controllo compenetrazione
+					for (Walls entry : building.get(piano+pianoOffset).planimetria.keySet()) { // controllo compenetrazione
 						if (wall.intersectsLine(entry.getPosition())
 								&& ((wall.getP1().distance(entry.getPosition().getP1()) + wall.getP2()
 										.distance(entry.getPosition().getP1()) == wall.getP1().distance(wall.getP2())
@@ -1068,7 +1197,7 @@ public class GUI extends JFrame {
 						}
 					}
 					Walls walls = new Walls(wall, impactSel);
-					building.get(piano+piano_offset).planimetria.put(walls, true);
+					building.get(piano+pianoOffset).planimetria.put(walls, true);
 					drawPanel.drawWall(walls);
 					wallListEnabledTxtArea.setText(wallListEnabledTxtArea.getText() + "(" + xWallS + " " + yWallS + ")-(" + xWallE + " " + yWallE + ") " + impactSel + "    ");
 				}
@@ -1095,7 +1224,7 @@ public class GUI extends JFrame {
 				}
 				Point util = new Point(xUtil, yUtil);
 				if (validatePosition(util)) {
-					for (Utilizers entry : building.get(piano+piano_offset).consumatori.keySet()) {
+					for (Utilizers entry : building.get(piano+pianoOffset).consumatori.keySet()) {
 						if (entry.getPosition().equals(util)) {
 							utilError.setText("Valore già presente");
 							xUtilTxt.setBorder(new JTextField().getBorder());// Reset dei border
@@ -1104,7 +1233,7 @@ public class GUI extends JFrame {
 						}
 					}
 					Utilizers utilizzatore = new Utilizers(util);
-					building.get(piano+piano_offset).consumatori.put(utilizzatore, true);
+					building.get(piano+pianoOffset).consumatori.put(utilizzatore, true);
 					drawPanel.drawUtilizer(util);
 					utilizerListEnabledTxtArea.setText(utilizerListEnabledTxtArea.getText() + "(" + util.x + " " + util.y + ")    ");
 				}
@@ -1131,16 +1260,16 @@ public class GUI extends JFrame {
 				}
 				Point util = new Point(xUtil, yUtil);
 				if (validatePosition(util)) {
-					for (Utilizers entry : building.get(piano+piano_offset).consumatori.keySet()) {
+					for (Utilizers entry : building.get(piano+pianoOffset).consumatori.keySet()) {
 						if (entry.getPosition().equals(util)) {
-							if (building.get(piano+piano_offset).consumatori.get(entry)) {
+							if (building.get(piano+pianoOffset).consumatori.get(entry)) {
 								utilizerListEnabledTxtArea.setText(
 										utilizerListEnabledTxtArea.getText().replace("(" + util.x + " " + util.y + ")    ", ""));
 							} else {
 								utilizerListDisabledTxtArea.setText(
 										utilizerListDisabledTxtArea.getText().replace("(" + util.x + " " + util.y + ")    ", ""));
 							}
-							building.get(piano+piano_offset).consumatori.remove(entry);
+							building.get(piano+pianoOffset).consumatori.remove(entry);
 							drawPanel.redraw();
 							return;
 						}
@@ -1172,10 +1301,10 @@ public class GUI extends JFrame {
 				}
 				Point util = new Point(xUtil, yUtil);
 				if (validatePosition(util)) {
-					for (Utilizers entry : building.get(piano+piano_offset).consumatori.keySet()) {
+					for (Utilizers entry : building.get(piano+pianoOffset).consumatori.keySet()) {
 						if (entry.getPosition().equals(util)) {
-							boolean flag = !(building.get(piano+piano_offset).consumatori.get(entry));
-							building.get(piano+piano_offset).consumatori.replace(entry, flag);
+							boolean flag = !(building.get(piano+pianoOffset).consumatori.get(entry));
+							building.get(piano+pianoOffset).consumatori.replace(entry, flag);
 							if (flag) {
 								drawPanel.drawUtilizer(util);
 								utilizerListEnabledTxtArea.setText(utilizerListEnabledTxtArea.getText() + "(" + util.x + " " + util.y + ")    ");
@@ -1191,7 +1320,7 @@ public class GUI extends JFrame {
 						}
 					}
 					Utilizers utilizzatore = new Utilizers(util);
-					building.get(piano+piano_offset).consumatori.put(utilizzatore, true);
+					building.get(piano+pianoOffset).consumatori.put(utilizzatore, true);
 					drawPanel.drawUtilizer(util);
 					utilizerListEnabledTxtArea.setText(utilizerListEnabledTxtArea.getText() + "(" + util.x + " " + util.y + ")    ");
 				}
@@ -1204,11 +1333,11 @@ public class GUI extends JFrame {
 				double int_tot, int_em, att_air, attenuazione, angolo, radStart, radEnd;
 				resultPanel.getGraphics().clearRect(0, 0, WIDTH, HEIGHT);
 				// coloro la mappa come prima cosa cosicché muri ed emittenti sovrascrivano i colori e non viceversa
-				if (building.get(piano+piano_offset).apparati.containsValue(true)) {
+				if (building.get(piano+pianoOffset).apparati.containsValue(true)) {
 					for (i = DIM_SQUARE / 2; i < HEIGHT; i += DIM_SQUARE) {
 						for (j = DIM_SQUARE / 2; j < WIDTH; j += DIM_SQUARE) {
 							int_tot = 0;
-							for (Map.Entry<Emitters, Boolean> entryE : building.get(piano+piano_offset).apparati.entrySet()) {
+							for (Map.Entry<Emitters, Boolean> entryE : building.get(piano+pianoOffset).apparati.entrySet()) {
 								if (!entryE.getValue()) {
 									continue;
 								}
@@ -1234,7 +1363,7 @@ public class GUI extends JFrame {
 										.pow(((double) i - (double) entryE.getKey().getPosition().y) / 100, 2)
 										+ Math.pow(((double) j - (double) entryE.getKey().getPosition().x) / 100, 2)))
 										+ Math.log10((double) entryE.getKey().getMHz()));
-								for (Map.Entry<Walls, Boolean> entryM : building.get(piano+piano_offset).planimetria.entrySet()) {
+								for (Map.Entry<Walls, Boolean> entryM : building.get(piano+pianoOffset).planimetria.entrySet()) {
 									if (!entryM.getValue()) {
 										continue;
 									}
@@ -1265,10 +1394,10 @@ public class GUI extends JFrame {
 							if(int_tot < 0) {
 								int_tot = 0;
 							}
-							building.get(piano+piano_offset).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2] = int_tot;
+							building.get(piano+pianoOffset).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2] = int_tot;
 							int_em = 0;
-							for(int p=0; p<piano+piano_offset; p++) {
-								att_air = building.get(p).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2]-20*((piano+piano_offset-p)*3+2.343)-MIN_INT;	//la componente del segnale nel piano diffusa verso il piano superiore
+							for(int p=0; p<piano+pianoOffset; p++) {
+								att_air = building.get(p).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2]-20*((piano+pianoOffset-p)*3+2.343)-MIN_INT;	//la componente del segnale nel piano diffusa verso il piano superiore
 								if(att_air<0) {	//si presume che gli apparati (emittenti ed utilizzatori) siano tutti collocati alla medesima altezza del pavimento e che ogni piano sia alto tre metri
 									att_air = 0;
 								}
@@ -1276,8 +1405,8 @@ public class GUI extends JFrame {
 							}
 							int_tot += int_em;
 							int_em = 0;
-							for(int p=building.size()-1; p>piano+piano_offset; p--) {
-								att_air = building.get(p).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2]-20*((p-(piano+piano_offset))*3+2.343)-MIN_INT;
+							for(int p=building.size()-1; p>piano+pianoOffset; p--) {
+								att_air = building.get(p).intensity[i/DIM_SQUARE-1/2][j/DIM_SQUARE-1/2]-20*((p-(piano+pianoOffset))*3+2.343)-MIN_INT;
 								if(att_air<0) {
 									att_air = 0;
 								}
@@ -1297,8 +1426,8 @@ public class GUI extends JFrame {
 					for (i = 0; i < HEIGHT/DIM_SQUARE; i++) {
 						for (j = 0; j < WIDTH/DIM_SQUARE; j++) {
 							int_em = 0;
-							for(int p=0; p<piano+piano_offset; p++) {
-								att_air = building.get(p).intensity[i][j]-20*((piano+piano_offset-p)*3+2.343)-MIN_INT;
+							for(int p=0; p<piano+pianoOffset; p++) {
+								att_air = building.get(p).intensity[i][j]-20*((piano+pianoOffset-p)*3+2.343)-MIN_INT;
 								if(att_air<0) {
 									att_air = 0;
 								}
@@ -1306,8 +1435,8 @@ public class GUI extends JFrame {
 							}
 							int_tot = int_em;
 							int_em = 0;
-							for(int p=building.size(); p>piano+piano_offset; p--) {
-								att_air = building.get(p).intensity[i][j]-20*((p-(piano+piano_offset))*3+2.343)-MIN_INT;
+							for(int p=building.size(); p>piano+pianoOffset; p--) {
+								att_air = building.get(p).intensity[i][j]-20*((p-(piano+pianoOffset))*3+2.343)-MIN_INT;
 								if(att_air<0) {
 									att_air = 0;
 								}
@@ -1335,10 +1464,10 @@ public class GUI extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				duplicateMapBtn.setEnabled(true);
 				piano--;
-				if(piano == -piano_offset-1) {
+				if(piano == -pianoOffset-1) {
 					building.add(new floor());
 					Collections.rotate(building,1);
-					piano_offset++;
+					pianoOffset++;
 				}
 				drawPanel.redraw();
 				resultPanel.redraw();
@@ -1348,7 +1477,7 @@ public class GUI extends JFrame {
 				wallListDisabledTxtArea.setText("");
 				utilizerListEnabledTxtArea.setText("");
 				utilizerListDisabledTxtArea.setText("");
-				for(Map.Entry<Emitters,Boolean> entry : building.get(piano+piano_offset).apparati.entrySet()) {
+				for(Map.Entry<Emitters,Boolean> entry : building.get(piano+pianoOffset).apparati.entrySet()) {
 					if(entry.getValue()) {
 						emitterListEnabledTxtArea.setText(emitterListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
 						
@@ -1356,21 +1485,21 @@ public class GUI extends JFrame {
 						emitterListDisabledTxtArea.setText(emitterListDisabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
 					}
 				}
-				for(Map.Entry<Walls, Boolean> entry : building.get(piano+piano_offset).planimetria.entrySet()) {
+				for(Map.Entry<Walls, Boolean> entry : building.get(piano+pianoOffset).planimetria.entrySet()) {
 					if(entry.getValue()) {
 						wallListEnabledTxtArea.setText(wallListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ") " + entry.getKey().getImpact() + "    ");
 					} else {
 						wallListDisabledTxtArea.setText(wallListDisabledTxtArea.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ") " + entry.getKey().getImpact() + "    ");
 					}
 				}
-				for(Map.Entry<Utilizers,Boolean> entry : building.get(piano+piano_offset).consumatori.entrySet()) {
+				for(Map.Entry<Utilizers,Boolean> entry : building.get(piano+pianoOffset).consumatori.entrySet()) {
 					if(entry.getValue()) {
 						utilizerListEnabledTxtArea.setText(utilizerListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
 					} else {
 						utilizerListDisabledTxtArea.setText(utilizerListDisabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
 					}
 				}
-				if(piano == -piano_offset) {
+				if(piano == -pianoOffset) {
 					previousFloorBtn.setText("Crea piano " + (piano-1));
 				} else {
 					previousFloorBtn.setText("Vai a piano " + (piano-1));
@@ -1395,7 +1524,7 @@ public class GUI extends JFrame {
 				wallListDisabledTxtArea.setText("");
 				utilizerListEnabledTxtArea.setText("");
 				utilizerListDisabledTxtArea.setText("");
-				for(Map.Entry<Emitters,Boolean> entry : building.get(piano+piano_offset).apparati.entrySet()) {
+				for(Map.Entry<Emitters,Boolean> entry : building.get(piano+pianoOffset).apparati.entrySet()) {
 					if(entry.getValue()) {
 						emitterListEnabledTxtArea.setText(emitterListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
 						
@@ -1403,14 +1532,14 @@ public class GUI extends JFrame {
 						emitterListDisabledTxtArea.setText(emitterListDisabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
 					}
 				}
-				for(Map.Entry<Walls, Boolean> entry : building.get(piano+piano_offset).planimetria.entrySet()) {
+				for(Map.Entry<Walls, Boolean> entry : building.get(piano+pianoOffset).planimetria.entrySet()) {
 					if(entry.getValue()) {
 						wallListEnabledTxtArea.setText(wallListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ") " + entry.getKey().getImpact() + "    ");
 					} else {
 						wallListDisabledTxtArea.setText(wallListDisabledTxtArea.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ") " + entry.getKey().getImpact() + "    ");
 					}
 				}
-				for(Map.Entry<Utilizers,Boolean> entry : building.get(piano+piano_offset).consumatori.entrySet()) {
+				for(Map.Entry<Utilizers,Boolean> entry : building.get(piano+pianoOffset).consumatori.entrySet()) {
 					if(entry.getValue()) {
 						utilizerListEnabledTxtArea.setText(utilizerListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
 					} else {
@@ -1433,11 +1562,11 @@ public class GUI extends JFrame {
 				try {
 					nuovoPiano = Integer.parseInt(duplicateMapTxt.getText());
 				} catch (NumberFormatException nfe) {
-					System.out.println("Il piano deve essere un numero da " + -piano_offset + " a " + (building.size()-1) + ", diverso dal piano corrente");
+					System.out.println("Il piano deve essere un numero da " + -pianoOffset + " a " + (building.size()-1) + ", diverso dal piano corrente");
 					return;
 				}
-				if(nuovoPiano>=-piano_offset && nuovoPiano<=piano_offset*3 && nuovoPiano != piano) {
-					building.get(piano+piano_offset).copyFloor(nuovoPiano);
+				if(nuovoPiano>=-pianoOffset && nuovoPiano<building.size() && nuovoPiano != piano) {
+					building.get(piano+pianoOffset).copyFloor(nuovoPiano);
 					drawPanel.redraw();
 					resultPanel.redraw();
 					emitterListEnabledTxtArea.setText("");
@@ -1446,7 +1575,7 @@ public class GUI extends JFrame {
 					wallListDisabledTxtArea.setText("");
 					utilizerListEnabledTxtArea.setText("");
 					utilizerListDisabledTxtArea.setText("");
-					for(Map.Entry<Emitters,Boolean> entry : building.get(piano+piano_offset).apparati.entrySet()) {
+					for(Map.Entry<Emitters,Boolean> entry : building.get(piano+pianoOffset).apparati.entrySet()) {
 						if(entry.getValue()) {
 							emitterListEnabledTxtArea.setText(emitterListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
 							
@@ -1454,14 +1583,14 @@ public class GUI extends JFrame {
 							emitterListDisabledTxtArea.setText(emitterListDisabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ") " + entry.getKey().getmW() + " mW  " + entry.getKey().getMHz() + " MHz  [" + entry.getKey().getAngles().x + "°-" + entry.getKey().getAngles().y + "°]    ");
 						}
 					}
-					for(Map.Entry<Walls, Boolean> entry : building.get(piano+piano_offset).planimetria.entrySet()) {
+					for(Map.Entry<Walls, Boolean> entry : building.get(piano+pianoOffset).planimetria.entrySet()) {
 						if(entry.getValue()) {
 							wallListEnabledTxtArea.setText(wallListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ") " + entry.getKey().getImpact() + "    ");
 						} else {
 							wallListDisabledTxtArea.setText(wallListDisabledTxtArea.getText() + "(" + entry.getKey().getPosition().getX1() + " " + entry.getKey().getPosition().getY1() + ")-(" + entry.getKey().getPosition().getX2() + " " + entry.getKey().getPosition().getY2()  + ") " + entry.getKey().getImpact() + "    ");
 						}
 					}
-					for(Map.Entry<Utilizers,Boolean> entry : building.get(piano+piano_offset).consumatori.entrySet()) {
+					for(Map.Entry<Utilizers,Boolean> entry : building.get(piano+pianoOffset).consumatori.entrySet()) {
 						if(entry.getValue()) {
 							utilizerListEnabledTxtArea.setText(utilizerListEnabledTxtArea.getText() + "(" + entry.getKey().getPosition().x + " " + entry.getKey().getPosition().y + ")    ");
 						} else {
@@ -1472,7 +1601,7 @@ public class GUI extends JFrame {
 					currentFloorLbl.setText("Piano: " + piano);
 					NextFloorBtn.setText("Vai a piano " + (piano+1));
 				} else {
-					System.out.println("Il piano deve essere un numero da " + -piano_offset + " a " + (building.size()-1) + ", diverso dal piano corrente");
+					System.out.println("Il piano deve essere un numero da " + -pianoOffset + " a " + (building.size()-1) + ", diverso dal piano corrente");
 				}
 			}
 		});
