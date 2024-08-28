@@ -22,9 +22,9 @@ public class GUI extends JFrame {
 	static final Color COL1 = Color.ORANGE;		//Da -60 a -75 dbm
 	static final Color COL2 = Color.YELLOW;		//Da -45 a -60 dbm
 	static final Color COL3 = Color.GREEN;		//Da -30 a -45 dbm
-	static final Color COL4 = Color.CYAN;		//> -30 dbm					valore più alto
+	static final Color COL4 = Color.CYAN;		//> -30 dbm				valore più alto
 	static Color[] toni = {COL0, COL1, COL2, COL3, COL4};
-	static int index = 0;
+	static int index = -1;
 	static final String BASSO = "Basso";
 	static final String MEDIO = "Medio";
 	static final String ALTO = "Alto";
@@ -709,6 +709,10 @@ public class GUI extends JFrame {
 				
 				changeColorBtn.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						if(index<0) {
+							captionError.setText("Seleziona un range");
+							return;
+						}
 						captionTxtR.setBorder(new JTextField().getBorder());
 						captionTxtG.setBorder(new JTextField().getBorder());
 						captionTxtB.setBorder(new JTextField().getBorder());
@@ -1426,29 +1430,33 @@ public class GUI extends JFrame {
 					for (i = 0; i < HEIGHT/DIM_SQUARE; i++) {
 						for (j = 0; j < WIDTH/DIM_SQUARE; j++) {
 							int_em = 0;
-							for(int p=0; p<piano+pianoOffset; p++) {
-								att_air = building.get(p).intensity[i][j]-20*((piano+pianoOffset-p)*3+2.343)-MIN_INT;
-								if(att_air<0) {
-									att_air = 0;
+							if(piano>-pianoOffset) {
+								for(int p=0; p<piano+pianoOffset; p++) {
+									att_air = building.get(p).intensity[i][j]-20*((piano+pianoOffset-p)*3+2.343)-MIN_INT;
+									if(att_air<0) {
+										att_air = 0;
+									}
+									int_em = (int_em + att_air)/2;
 								}
-								int_em = (int_em + att_air)/2;
 							}
 							int_tot = int_em;
 							int_em = 0;
-							for(int p=building.size(); p>piano+pianoOffset; p--) {
-								att_air = building.get(p).intensity[i][j]-20*((p-(piano+pianoOffset))*3+2.343)-MIN_INT;
-								if(att_air<0) {
-									att_air = 0;
+							if(piano+pianoOffset<building.size()-1) {
+								for(int p=building.size(); p>piano+pianoOffset; p--) {
+									att_air = building.get(p).intensity[i][j]-20*((p-(piano+pianoOffset))*3+2.343)-MIN_INT;
+									if(att_air<0) {
+										att_air = 0;
+									}
+									int_em = (int_em + att_air)/2;
 								}
-								int_em = (int_em + att_air)/2;
-							}
-							int_tot += int_em;
-							if(int_tot > 0) {
-								if(currentFloorCB.isSelected()) {
-									values[i][j] = int_tot;
+								int_tot += int_em;
+								if(int_tot > 0) {
+									if(currentFloorCB.isSelected()) {
+										values[i][j] = int_tot;
+									}
+									risultato = (int) Math.floor(int_tot);
+									resultPanel.paintRectangle();
 								}
-								risultato = (int) Math.floor(int_tot);
-								resultPanel.paintRectangle();
 							}
 						}
 					}
