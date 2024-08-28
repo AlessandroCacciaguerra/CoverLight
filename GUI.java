@@ -735,7 +735,7 @@ public class GUI extends JFrame {
 						}
 						if(r>=0 && g>=0 && b>=0 && r<=255 && g<=255 && b<=255) {
 							Color nuovoColore = new Color(r, g, b);
-							if(nuovoColore == Color.white || nuovoColore == Color.gray || nuovoColore == Color.darkGray || nuovoColore == Color.black) {
+							if(nuovoColore.equals(Color.white) || nuovoColore.equals(Color.gray) || nuovoColore.equals(Color.darkGray) || nuovoColore.equals(Color.black)) {
 								captionError.setText("Non si accettano i colori bianco, grigio, grigio scuro e nero perché già usati altrove nell'applicazione");
 							} else {
 								for(int count = 0; count < 5; count++) {
