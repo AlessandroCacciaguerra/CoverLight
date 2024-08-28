@@ -165,23 +165,24 @@ public class GUI extends JFrame {
 		
 		// Didascalia e titolo
 		final JLabel canvasTitleLbl = new JLabel("Canvas");
+		canvasTitleLbl.setFont(new Font("Serif", Font.BOLD, 25));
 		final JButton captionBtn = new JButton("Didascalia");
 		final JPanel canvasTitlePanel = new JPanel();
 		canvasTitlePanel.setLayout(new BorderLayout());
 		canvasTitlePanel.add(canvasTitleLbl, BorderLayout.LINE_START);
 		canvasTitlePanel.add(captionBtn, BorderLayout.LINE_END);
-		canvasTitlePanel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 20));
+		canvasTitlePanel.setBorder(BorderFactory.createEmptyBorder(0, 40, 0, 40));
 		
 		// Area di disegno del canvas
 		final JPanel canvasContainerPanel = new JPanel(new BorderLayout());// panel che contiene lo scroll
 		final canvasPanel drawPanel = new canvasPanel();// panel che contiene il disegno
 		final JScrollPane scrollCanvas = new JScrollPane(canvasContainerPanel);
-		scrollCanvas.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+		scrollCanvas.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+		scrollCanvas.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 		canvasContainerPanel.add(drawPanel);
 		
 		//Pulsanti piano
 		final JPanel canvasFloorPanel = new JPanel(new BorderLayout());
-		//canvasFloorPanel.setBorder(new JTextField().getBorder());
 		
 		//Pusanti e label per i piani
 		final JPanel canvasFloorBtnPanel = new JPanel(new FlowLayout());
@@ -214,7 +215,7 @@ public class GUI extends JFrame {
 		
 	// fine Canvas
 
-		// <Componenti
+	// <Componenti
 		final JPanel buttonsPanel = new JPanel();
 		buttonsPanel.setLayout(new BoxLayout(buttonsPanel, BoxLayout.Y_AXIS));
 
@@ -570,7 +571,6 @@ public class GUI extends JFrame {
 		// Btn listeners
 		captionBtn.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
 				// Didascalia
 				final JDialog captionDialog = new JDialog();
 				captionDialog.setTitle("Didascalia");
@@ -609,14 +609,15 @@ public class GUI extends JFrame {
 				final JScrollPane scroll = new JScrollPane(captionTxtArea);
 				scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 				captionTxtArea.setEditable(false);
-
+				captionTxtArea.setCaretPosition(0);
+				
 				// Colori
 				final JPanel colorPanel = new JPanel();// Panel containing colors btn/lbl
 				GroupLayout colorLayout = new GroupLayout(colorPanel);
 				colorPanel.setLayout(colorLayout);
 
-				final JLabel captionLbl = new JLabel(
-						"L'intensità del segnale è così rappresentata (dbm: decibel milliwatt)");
+				final JLabel captionLbl = new JLabel("L'intensità del segnale è così rappresentata (dbm: decibel milliwatt)");
+				final JLabel captionExplanationLbl = new JLabel("Selezionare un range di dbm per visionare il colore rappresentante; se si desidera utilizzare una tonalità diversa, alterare i valori (numeri da 0 a 255)e premere Applica.");
 				final JMenuBar colorMenuBar = new JMenuBar();
 				final JMenu colorMenu = new JMenu("Range");
 				final JMenuItem menu0 = new JMenuItem("Da -75 a -90 dbm");
@@ -643,7 +644,7 @@ public class GUI extends JFrame {
 				colorLayout.setAutoCreateContainerGaps(true);
 
 				colorLayout.setHorizontalGroup(colorLayout.createParallelGroup(GroupLayout.Alignment.CENTER)
-						.addComponent(captionLbl).addComponent(colorMenuBar)
+						.addComponent(captionLbl).addComponent(captionExplanationLbl).addComponent(colorMenuBar)
 						.addGroup(colorLayout.createSequentialGroup()
 								.addGroup(colorLayout.createSequentialGroup().addComponent(captionLblR)
 										.addComponent(captionTxtR))
@@ -655,7 +656,7 @@ public class GUI extends JFrame {
 								.addComponent(captionError)));
 
 				colorLayout.setVerticalGroup(
-						colorLayout.createSequentialGroup().addComponent(captionLbl).addComponent(colorMenuBar)
+						colorLayout.createSequentialGroup().addComponent(captionLbl).addComponent(captionExplanationLbl).addComponent(colorMenuBar)
 								.addGroup(colorLayout.createParallelGroup(GroupLayout.Alignment.CENTER)
 										.addGroup(colorLayout.createParallelGroup(GroupLayout.Alignment.CENTER)
 												.addComponent(captionLblR).addComponent(captionTxtR))
@@ -670,7 +671,7 @@ public class GUI extends JFrame {
 				captionPanel.add(scroll);
 				captionDialog.add(captionPanel, BorderLayout.CENTER);
 				captionDialog.add(colorPanel, BorderLayout.PAGE_END);
-				captionDialog.setSize(900, 600);
+				captionDialog.setSize(1050, 600);
 				captionDialog.setVisible(true);
 
 				// Btn action Listeners
@@ -748,11 +749,13 @@ public class GUI extends JFrame {
 						if (r >= 0 && g >= 0 && b >= 0 && r <= 255 && g <= 255 && b <= 255) {
 							Color nuovoColore = new Color(r, g, b);
 							if (nuovoColore.equals(Color.white) || nuovoColore.equals(Color.gray) || nuovoColore.equals(Color.darkGray) || nuovoColore.equals(Color.black)) {
-								captionError.setText(
-										"Non si accettano i colori bianco, grigio, grigio scuro e nero perché già usati altrove nell'applicazione");
+								captionError.setText("Non si accettano i colori bianco, grigio, grigio scuro e nero perché già usati altrove nell'applicazione");
 							} else {
 								for (int count = 0; count < 5; count++) {
 									if (toni[count].equals(nuovoColore)) {
+										captionTxtR.setBorder(new LineBorder(Color.red, 1));
+										captionTxtG.setBorder(new LineBorder(Color.red, 1));
+										captionTxtB.setBorder(new LineBorder(Color.red, 1));
 										captionError.setText("Colore già presente");
 										return;
 									}
