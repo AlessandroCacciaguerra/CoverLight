@@ -757,7 +757,7 @@ public class GUI extends JFrame {
 									}
 								}
 								toni[index] = nuovoColore;
-								captionError.setText("Colore aggiunto con successo");
+								captionError.setText("Colore modificato con successo");
 							}
 						} else {
 							captionError.setText("I tre colori devono essere compresi fra 0 e 255");
