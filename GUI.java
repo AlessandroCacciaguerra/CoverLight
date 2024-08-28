@@ -751,12 +751,13 @@ public class GUI extends JFrame {
 										"Non si accettano i colori bianco, grigio, grigio scuro e nero perché già usati altrove nell'applicazione");
 							} else {
 								for (int count = 0; count < 5; count++) {
-									if (toni[index] == nuovoColore) {
+									if (toni[count].equals(nuovoColore)) {
 										captionError.setText("Colore già presente");
 										return;
 									}
 								}
 								toni[index] = nuovoColore;
+								captionError.setText("Colore aggiunto con successo");
 							}
 						} else {
 							captionError.setText("I tre colori devono essere compresi fra 0 e 255");
